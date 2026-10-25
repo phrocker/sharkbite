@@ -1375,6 +1375,23 @@ for (const sample of ["", "derived", "ontology.assertion.origin", "0.91", "laten
 `)
 }
 
+func TestStaticGraphNeverMixesWorkspaceAndTableSources(t *testing.T) {
+	runNodeUITest(t, `
+const scenario = await runScenario({documents: true, neighborhood: true});
+scenario.ctx.mergeGraph({
+  nodes: [{id: "workspace-node", labels: ["Workspace"]}],
+  edges: [{id: "workspace-edge", from: "workspace-node", to: "workspace-node"}],
+  assertions: [{id: "workspace-assertion"}],
+});
+scenario.ctx.mergeGraph({nodes: [{id: "table-node", labels: ["Table"]}], edges: []}, "table");
+assert.deepStrictEqual([...scenario.ctx.state.nodes.keys()], ["table-node"]);
+assert.strictEqual(scenario.ctx.state.edges.size, 0);
+assert.strictEqual(scenario.ctx.state.assertions.size, 0);
+scenario.ctx.mergeGraph({nodes: [{id: "new-workspace-node", labels: ["Workspace"]}], edges: []});
+assert.deepStrictEqual([...scenario.ctx.state.nodes.keys()], ["new-workspace-node"]);
+`)
+}
+
 func TestStaticWorkspaceDistinguishesDerivedEdgesInGraphList(t *testing.T) {
 	runNodeUITest(t, `
 const scenario = await runScenario({documents: true, neighborhood: true});

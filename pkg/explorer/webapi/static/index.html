@@ -6,26 +6,18 @@
   <title>Sharkbite Explorer</title>
   <link rel="stylesheet" href="/assets/style.css">
 </head>
-<body>
+<body class="view-evidence">
   <header>
     <div class="brand"><strong><span class="brand-mark" aria-hidden="true">⌁</span> sharkbite <span class="brand-section">/ explorer</span></strong><span id="snapshot" aria-live="polite">loading snapshot…</span><span id="identity-badge" class="identity-badge" role="status" aria-live="polite" hidden></span><button id="login" class="login" type="button" hidden>Sign in</button></div>
-    <form id="search" aria-describedby="query-help vector-mode-status">
-      <label class="sr-only" for="query">Retrieval query</label>
-      <input id="query" required placeholder="Retrieve cited evidence…" autocomplete="off">
-      <span id="query-help" class="sr-only">Enter a retrieval query, choose one or more available modes, then search.</span>
-      <fieldset id="modes">
-        <legend class="sr-only">Retrieval modes</legend>
-        <label class="mode-option"><input type="checkbox" value="lexical" checked>Lexical</label>
-        <label class="mode-option"><input type="checkbox" value="tree" checked>Tree</label>
-        <label class="mode-option"><input type="checkbox" value="graph" checked>Graph</label>
-        <label id="mode-vector-control" class="mode-option"><input id="mode-vector" type="checkbox" value="vector">Vector</label>
-      </fieldset>
-      <span id="vector-mode-status" class="mode-hint" role="status"></span>
-      <button id="search-button">Search</button>
-    </form>
+    <nav class="shell-actions" aria-label="Explorer tools">
+      <button id="sources-toggle" type="button" aria-controls="sources-drawer" aria-expanded="false">Sources</button>
+      <button id="context-toggle" type="button" aria-controls="context-drawer" aria-expanded="false">Workspace</button>
+    </nav>
   </header>
+  <div id="shell-backdrop" hidden></div>
   <main>
-    <aside class="left">
+    <aside id="sources-drawer" class="left" aria-label="Sources">
+      <div class="drawer-heading"><h2>Sources</h2><button class="drawer-close" type="button" aria-label="Close sources">✕</button></div>
       <section id="upload-section" hidden>
         <h2>Upload</h2>
         <form id="upload">
@@ -54,6 +46,7 @@
     <section class="center">
       <div class="tabs" role="tablist" aria-label="Explorer views"><button id="tab-chat" class="tab" data-panel="chat" role="tab" aria-controls="chat" aria-selected="false" tabindex="-1" type="button">Chat</button><button id="tab-evidence" class="tab active" data-panel="evidence" role="tab" aria-controls="evidence" aria-selected="true" type="button">Evidence</button><button id="tab-team" class="tab" data-panel="team" role="tab" aria-controls="team" aria-selected="false" tabindex="-1" type="button">Team</button><button id="tab-decisions" class="tab" data-panel="decisions" role="tab" aria-controls="decisions" aria-selected="false" tabindex="-1" type="button">Decisions</button><button id="tab-learning" class="tab" data-panel="learning" role="tab" aria-controls="learning" aria-selected="false" tabindex="-1" type="button">Learning</button><button id="tab-graph" class="tab" data-panel="graph" role="tab" aria-controls="graph" aria-selected="false" tabindex="-1" type="button">Graph</button><button id="tab-ontology" class="tab" data-panel="ontology" role="tab" aria-controls="ontology" aria-selected="false" tabindex="-1" type="button">Ontology</button></div>
       <div id="chat" class="panel" role="tabpanel" aria-labelledby="tab-chat">
+        <div class="panel-intro"><span class="graph-eyebrow">GOVERNED ANSWERS</span><h1>Ask the workspace</h1><p>Answers use authorized evidence and are recorded after verification.</p></div>
         <form id="chat-form" class="stack">
           <label for="chat-question">Ask the governed workspace</label>
           <textarea id="chat-question" required maxlength="32768" placeholder="Ask a question grounded in authorized evidence…"></textarea>
@@ -64,7 +57,25 @@
         <p id="chat-status" class="muted" role="status" aria-live="polite">Responses appear only after verification and durable capture.</p>
         <div id="chat-results"></div>
       </div>
-      <div id="evidence" class="panel active" role="tabpanel" aria-labelledby="tab-evidence"><p id="evidence-status" class="muted" role="status" aria-live="polite">Run a retrieval query to inspect exact evidence and explanations.</p><div id="evidence-results"></div></div>
+      <div id="evidence" class="panel active" role="tabpanel" aria-labelledby="tab-evidence">
+        <div class="panel-intro"><span class="graph-eyebrow">RETRIEVAL</span><h1>Evidence</h1><p>Search the sources you can access and inspect exact citations.</p></div>
+        <form id="search" class="evidence-search" aria-describedby="query-help vector-mode-status">
+          <label class="sr-only" for="query">Retrieval query</label>
+          <input id="query" required placeholder="Retrieve cited evidence…" autocomplete="off">
+          <span id="query-help" class="sr-only">Enter a retrieval query, choose one or more available modes, then search.</span>
+          <fieldset id="modes">
+            <legend class="sr-only">Retrieval modes</legend>
+            <label class="mode-option"><input type="checkbox" value="lexical" checked>Lexical</label>
+            <label class="mode-option"><input type="checkbox" value="tree" checked>Tree</label>
+            <label class="mode-option"><input type="checkbox" value="graph" checked>Graph</label>
+            <label id="mode-vector-control" class="mode-option"><input id="mode-vector" type="checkbox" value="vector">Vector</label>
+          </fieldset>
+          <span id="vector-mode-status" class="mode-hint" role="status"></span>
+          <button id="search-button">Search</button>
+        </form>
+        <p id="evidence-status" class="muted" role="status" aria-live="polite">Run a retrieval query to inspect exact evidence and explanations.</p>
+        <div id="evidence-results"></div>
+      </div>
       <div id="team" class="panel team-panel" role="tabpanel" aria-labelledby="tab-team">
         <section class="team-controls-card no-print" aria-labelledby="team-heading">
           <h2 id="team-heading">Authorized team overview</h2>
@@ -363,7 +374,12 @@
         <div id="ontology-details"></div>
       </div>
     </section>
-    <aside class="right">
+    <aside id="context-drawer" class="right" aria-label="Workspace and selection">
+      <div class="drawer-heading"><h2>Workspace</h2><button class="drawer-close" type="button" aria-label="Close workspace">✕</button></div>
+      <section class="graph-selection" aria-labelledby="selection-heading">
+        <h2 id="selection-heading">Selection</h2>
+        <div id="selection" class="muted" aria-live="polite">Select evidence, a hierarchy section, or a graph node.</div>
+      </section>
       <section id="workspace-settings-panel" aria-labelledby="workspace-settings-heading">
         <h2 id="workspace-settings-heading">Workspace settings</h2>
         <form id="workspace-settings-form" class="workspace-settings-form">
@@ -388,12 +404,8 @@
         <h2 id="identity-heading">Identity</h2>
         <div id="identity" role="status" aria-live="polite">Identifying…</div>
       </section>
-      <section class="graph-selection" aria-labelledby="selection-heading">
-        <h2 id="selection-heading">Selection</h2>
-        <div id="selection" class="muted" aria-live="polite">Select evidence, a hierarchy section, or a graph node.</div>
-      </section>
       <section aria-labelledby="workspace-heading">
-        <h2 id="workspace-heading">Workspace settings</h2>
+        <details class="advanced-workspace"><summary id="workspace-heading">Advanced workspace controls</summary>
         <label for="workspace-id">Workspace wire ID</label>
         <input id="workspace-id" autocomplete="off" placeholder="base64url workspace ID">
         <div class="button-row"><button id="settings-load" type="button">Load</button><button id="logout" type="button">Log out</button></div>
@@ -404,6 +416,7 @@
         <label for="lens-select">Trusted ontology lens</label>
         <select id="lens-select"></select>
         <button id="lens-save" type="button">Select lens</button>
+        </details>
       </section>
       <section aria-labelledby="provenance-heading">
         <h2 id="provenance-heading">Provenance</h2>

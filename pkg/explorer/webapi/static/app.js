@@ -2453,8 +2453,10 @@ function clearSnapshotDependentViews() {
   state.currentDocumentID = "";
   state.selectedSectionID = "";
   state.selected = null;
+  state.selectedEdge = null;
   state.nodes.clear();
   state.edges.clear();
+  state.assertions.clear();
   state.graphCursors.clear();
   positions.clear();
   $("hierarchy").replaceChildren();
@@ -2955,7 +2957,35 @@ function edgeDerivationScore(edge) {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-function mergeGraph(graph) {
+let graphSource = "workspace";
+
+function setGraphSource(source) {
+  if (graphSource === source) return;
+  graphSource = source;
+  graphGeneration++;
+  state.nodes.clear();
+  state.edges.clear();
+  state.assertions.clear();
+  state.graphCursors.clear();
+  state.selected = null;
+  state.selectedEdge = null;
+  positions.clear();
+  const toggle = $("graph-table-active");
+  if (toggle) toggle.checked = source === "table";
+  $("expand").disabled = true;
+  $("path-from").value = "";
+  $("path-to").value = "";
+  $("graph-status").textContent = source === "table"
+    ? "Load a table node or find one by term."
+    : "Select a workspace graph node.";
+  $("selection").className = "muted";
+  setMessage($("selection"), "Select evidence, a hierarchy section, or a graph node.");
+  renderGraphList();
+  draw();
+}
+
+function mergeGraph(graph, source = "workspace") {
+  setGraphSource(source);
   const previousNodeCount = state.nodes.size;
   const previousEdgeCount = state.edges.size;
   for (const node of graph.nodes || []) state.nodes.set(node.id, node);
@@ -3067,8 +3097,68 @@ document.querySelectorAll(".tab").forEach((tab) => {
   };
 });
 
+let openShellDrawer = "";
+function setShellDrawer(which, restoreFocus = false) {
+  const previous = openShellDrawer;
+  openShellDrawer = which;
+  // Static UI harnesses mount only the controls used by each scenario.
+  if (!$("shell-backdrop")) return;
+  document.body.classList.toggle("drawer-sources", which === "sources");
+  document.body.classList.toggle("drawer-context", which === "context");
+  $("shell-backdrop").hidden = !which;
+  for (const name of ["sources", "context"]) {
+    $(`${name}-toggle`).setAttribute("aria-expanded", String(which === name));
+    const drawer = $(`${name}-drawer`);
+    if (which === name) {
+      drawer.setAttribute("role", "dialog");
+      drawer.setAttribute("aria-modal", "true");
+    } else {
+      drawer.removeAttribute("role");
+      drawer.removeAttribute("aria-modal");
+    }
+  }
+  if (which) {
+    $(`${which}-drawer`).querySelector(".drawer-close").focus();
+  } else if (restoreFocus && previous) {
+    $(`${previous}-toggle`).focus();
+  }
+}
+
+function installShellDrawers() {
+  if (!$("sources-toggle") || !$("context-toggle")) return;
+  for (const name of ["sources", "context"]) {
+    $(`${name}-toggle`).onclick = () => setShellDrawer(openShellDrawer === name ? "" : name, true);
+    $(`${name}-drawer`).querySelector(".drawer-close").onclick = () => setShellDrawer("", true);
+  }
+  $("shell-backdrop").onclick = () => setShellDrawer("", true);
+  document.addEventListener("keydown", (event) => {
+    if (!openShellDrawer) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setShellDrawer("", true);
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const drawer = $(`${openShellDrawer}-drawer`);
+    const items = [...drawer.querySelectorAll("button,input,select,textarea,a[href]")]
+      .filter((item) => !item.disabled && item.getClientRects().length);
+    if (!items.length) return;
+    if (event.shiftKey && document.activeElement === items[0]) {
+      event.preventDefault();
+      items[items.length - 1].focus();
+    } else if (!event.shiftKey && document.activeElement === items[items.length - 1]) {
+      event.preventDefault();
+      items[0].focus();
+    }
+  });
+}
+installShellDrawers();
+
 function activate(id) {
   if (id === "decisions" && !capability("decisions")) return;
+  setShellDrawer("");
+  document.body.classList.remove("view-chat", "view-evidence", "view-team", "view-decisions", "view-learning", "view-graph", "view-ontology");
+  document.body.classList.add(`view-${id}`);
   document.body.classList.toggle("graph-focus", id === "graph");
   document.querySelectorAll(".tab,.panel").forEach((element) => {
     element.classList.remove("active");
