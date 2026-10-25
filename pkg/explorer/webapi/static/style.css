@@ -115,3 +115,5 @@ body.graph-focus #graph{max-width:1400px;margin:0 auto}
 #graph-table .graph-tools{align-items:center;margin-bottom:8px}
 #graph-table-summary{margin:0 0 10px}
 #graph-table-status:empty{display:none}
+/* The header badge keeps identity visible while the graph inspector stays in view. */
+body.graph-focus .right .graph-identity{display:none}
