@@ -3091,7 +3091,9 @@ document.querySelectorAll(".tab").forEach((tab) => {
   tab.onclick = () => activate(tab.dataset.panel);
   tab.onkeydown = (event) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-    const tabs = [...document.querySelectorAll(".tab")];
+    event.preventDefault();
+    const tabs = [...document.querySelectorAll(".tab")].filter((item) => !item.disabled);
+    if (!tabs.length) return;
     const offset = event.key === "ArrowRight" ? 1 : -1;
     const target = tabs[(tabs.indexOf(tab) + offset + tabs.length) % tabs.length];
     activate(target.dataset.panel);
