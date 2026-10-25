@@ -95,22 +95,27 @@ const graphTable = (() => {
       if (mine !== generation) return;
       description = value;
       section.hidden = false;
+      // A table-only Explorer should open on its actual graph source.
+      if (!capability("neighborhood")) el("graph-table-active").checked = true;
       el("graph-table-summary").textContent =
         `Table ${value.table} (${value.schema_id}@${value.version}) under label ${value.label}, ` +
         `read from ${describeStores(value.stores)}. Edges are followed outward only.`;
       el("graph-table-depth").max = String(value.bounds.max_depth);
       renderOntology(value.ontology);
-      status("Choose the table source, then load a node by row key or find one by term.");
+      status("Load a node by row key to see its first hop, or find one by term.");
     } catch (error) {
       if (mine !== generation) return;
       description = null;
-      // A reader without the table's label is told nothing is mounted;
-      // the panel says so rather than showing an empty toolbar.
-      section.hidden = false;
-      el("graph-table-summary").textContent =
-        "A described table is mounted but is not visible to you: its label is not among your grants.";
+      // The API conceals the route from readers without its label; the UI
+      // must not reveal that a table is mounted either.
+      section.hidden = error.status === 404;
       el("graph-table-ontology-body").replaceChildren();
-      status(error.message || String(error), true);
+      if (section.hidden) {
+        status("");
+      } else {
+        el("graph-table-summary").textContent = "The graph source could not be loaded.";
+        status(error.message || String(error), true);
+      }
     }
   }
 
@@ -183,12 +188,16 @@ const graphTable = (() => {
     try {
       const response = await request("nodes", {ids: [id]});
       if (stale(mine, graphMine)) return;
-      mergeGraph({nodes: response.nodes, edges: []});
       const node = response.nodes[0];
       const found = node && decodedNodeProperties(node).found === "true";
-      status(found ? `Loaded ${id}; expand it to follow its edges.` : `${id} is in the namespace but the table holds no cell for it.`);
+      if (!found) {
+        status(`${id} is in the namespace but the table holds no cell for it.`);
+        return;
+      }
+      mergeGraph({nodes: response.nodes, edges: []});
       activate("graph");
       selectNode(id);
+      await expand([id]);
     } catch (error) {
       if (stale(mine, graphMine)) return;
       status(`Load failed: ${error.message || String(error)}`, true);

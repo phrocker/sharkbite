@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Shoal Explorer</title>
+  <title>Sharkbite Explorer</title>
   <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
   <header>
-    <div class="brand"><strong>Shoal Explorer</strong><span id="snapshot" aria-live="polite">loading snapshot…</span><span id="identity-badge" class="identity-badge" role="status" aria-live="polite" hidden></span><button id="login" class="login" type="button" hidden>Sign in</button></div>
+    <div class="brand"><strong><span class="brand-mark" aria-hidden="true">⌁</span> sharkbite <span class="brand-section">/ explorer</span></strong><span id="snapshot" aria-live="polite">loading snapshot…</span><span id="identity-badge" class="identity-badge" role="status" aria-live="polite" hidden></span><button id="login" class="login" type="button" hidden>Sign in</button></div>
     <form id="search" aria-describedby="query-help vector-mode-status">
       <label class="sr-only" for="query">Retrieval query</label>
       <input id="query" required placeholder="Retrieve cited evidence…" autocomplete="off">
@@ -310,6 +310,7 @@
         <pre id="learning-console-output" class="decision-output" aria-live="polite"></pre>
       </div>
       <div id="graph" class="panel" role="tabpanel" aria-labelledby="tab-graph">
+        <div class="graph-intro"><span class="graph-eyebrow">CONNECTED EVIDENCE / LIVE GRAPH</span><h1>Follow what connects.</h1><p>Load a node to see its first hop. Select any node to explore farther, or trace a path between two records.</p></div>
         <div class="graph-tools">
           <button id="expand" type="button" disabled>Expand selected</button>
           <button id="continue-expansion" type="button" hidden>More neighbors</button>
@@ -337,7 +338,15 @@
           <details id="graph-table-ontology"><summary>Table ontology</summary><div id="graph-table-ontology-body"></div></details>
         </section>
         <p id="graph-status" class="muted" aria-live="polite">No graph expansion yet.</p>
-        <canvas id="canvas" aria-hidden="true"></canvas>
+        <div class="graph-stage">
+          <div class="graph-view-controls" aria-label="Graph view controls">
+            <button id="graph-zoom-in" type="button" aria-label="Zoom in">+</button>
+            <button id="graph-zoom-out" type="button" aria-label="Zoom out">−</button>
+            <button id="graph-fit" type="button">Fit</button>
+          </div>
+          <canvas id="canvas" aria-label="Interactive graph; use mouse wheel to zoom and drag to pan"></canvas>
+          <div id="graph-legend" class="graph-legend" aria-label="Node kinds"></div>
+        </div>
         <div id="graph-list">
           <section aria-labelledby="graph-nodes-heading">
             <h3 id="graph-nodes-heading">Graph nodes</h3>
@@ -375,11 +384,11 @@
         </div>
         <p id="workspace-settings-status" class="muted" role="status" aria-live="polite">No workspace selected.</p>
       </section>
-      <section id="identity-panel" aria-labelledby="identity-heading">
+      <section id="identity-panel" class="graph-identity" aria-labelledby="identity-heading">
         <h2 id="identity-heading">Identity</h2>
         <div id="identity" role="status" aria-live="polite">Identifying…</div>
       </section>
-      <section aria-labelledby="selection-heading">
+      <section class="graph-selection" aria-labelledby="selection-heading">
         <h2 id="selection-heading">Selection</h2>
         <div id="selection" class="muted" aria-live="polite">Select evidence, a hierarchy section, or a graph node.</div>
       </section>

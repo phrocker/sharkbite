@@ -200,7 +200,11 @@ would (qualifier or value, split by `field_sep`, id at `id_index` or the
 last field, relationship at `rel_index`, neighbor row `primary_prefix` +
 id, a `float32_be` value as the weight), follows up to `fanout` edges per
 node in (family, relationship, target) order, and stops adding nodes at
-`max_nodes`. The rows the last hop reached are read for their kinds and
+`max_nodes`. For a qualifier such as `owns\u0000service|api` whose target stores
+only the id, set `field_sep` to `\u0000`, `rel_index` to `0`, `id_index` to
+`1`, and `primary_prefix` to `ent:`. The reader then follows
+`ent:service|api`; without the prefix it looks for `service|api`.
+The rows the last hop reached are read for their kinds and
 attributes. The Explorer therefore holds only the walk's frontier; the
 cell reads, merges, and versioning run in the store processes, and a
 table split across several stores is walked without any one process

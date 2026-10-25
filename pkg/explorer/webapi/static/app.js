@@ -1887,26 +1887,27 @@ function applyCapabilities() {
   }
 
   const canNeighborhood = capability("neighborhood");
-  $("expand").hidden = !canNeighborhood;
-  $("expand").disabled = !canNeighborhood || !state.selected;
+  const canGraphTable = capability("graph_table");
+  $("expand").hidden = !canNeighborhood && !canGraphTable;
+  $("expand").disabled = (!canNeighborhood && !canGraphTable) || !state.selected;
   updateContinueButton();
 
   const canPath = capability("path");
   document.querySelectorAll("[for='path-from'],[for='path-to']").forEach((label) => {
-    label.hidden = !canPath;
+    label.hidden = !canPath && !canGraphTable;
   });
-  $("path-from").hidden = !canPath;
-  $("path-to").hidden = !canPath;
-  $("find-path").hidden = !canPath;
-  $("find-path").disabled = !canPath;
+  $("path-from").hidden = !canPath && !canGraphTable;
+  $("path-to").hidden = !canPath && !canGraphTable;
+  $("find-path").hidden = !canPath && !canGraphTable;
+  $("find-path").disabled = !canPath && !canGraphTable;
   const graphStatus = $("graph-status");
-  if (!canNeighborhood && !canPath) {
+  if (!canNeighborhood && !canPath && !canGraphTable) {
     graphStatus.dataset.capabilityPlaceholder = "graph";
     graphStatus.textContent =
       "Graph expansion and path finding are unavailable from this Explorer service.";
   } else if (graphStatus.dataset.capabilityPlaceholder === "graph") {
     delete graphStatus.dataset.capabilityPlaceholder;
-    graphStatus.textContent = "No graph expansion yet.";
+    graphStatus.textContent = canGraphTable ? "Load a node to explore its first hop." : "No graph expansion yet.";
   }
 
   if (!capability("documents")) {
@@ -2956,12 +2957,13 @@ function edgeDerivationScore(edge) {
 
 function mergeGraph(graph) {
   const previousNodeCount = state.nodes.size;
+  const previousEdgeCount = state.edges.size;
   for (const node of graph.nodes || []) state.nodes.set(node.id, node);
   for (const edge of graph.edges || []) state.edges.set(edge.id, edge);
   for (const assertion of graph.assertions || []) {
     state.assertions.set(assertion.id, assertion);
   }
-  if (state.nodes.size !== previousNodeCount) positions.clear();
+  if (state.nodes.size !== previousNodeCount || state.edges.size !== previousEdgeCount) positions.clear();
   renderGraphList();
 }
 
@@ -3067,6 +3069,7 @@ document.querySelectorAll(".tab").forEach((tab) => {
 
 function activate(id) {
   if (id === "decisions" && !capability("decisions")) return;
+  document.body.classList.toggle("graph-focus", id === "graph");
   document.querySelectorAll(".tab,.panel").forEach((element) => {
     element.classList.remove("active");
   });
@@ -3136,15 +3139,19 @@ function nodeName(node, fallback) {
 function selectNode(id) {
   state.selected = id;
   state.selectedEdge = null;
-  $("expand").disabled = !id || !capability("neighborhood");
+  $("expand").disabled = !id || !(capability("neighborhood") ||
+    (typeof graphTable !== "undefined" && graphTable.active()));
   updateContinueButton();
   const node = state.nodes.get(id);
   if (node) {
+    const properties = Object.entries(decodedNodeProperties(node))
+      .filter(([key]) => key !== "found" && key !== "node/kind");
     showSelection([
       ["Node", id],
       ["Kind", node.kind],
       ["Labels", (node.labels || []).join(", ")],
-      ["Properties", JSON.stringify(decodedNodeProperties(node))],
+      ...properties.slice(0, 24),
+      ...(properties.length > 24 ? [["More", `${properties.length - 24} additional properties`]] : []),
     ]);
     $("path-from").value = id;
   } else {
@@ -3350,29 +3357,160 @@ function shortLabel(value) {
 const canvas = $("canvas");
 const context = canvas.getContext("2d");
 const positions = new Map();
+const graphColors = ["#74e4c0", "#ffb86b", "#8bb5ff", "#e7a5c7", "#c2b0ff", "#e8d17b", "#82d4d4", "#e4a88b"];
+const graphKindColors = new Map();
+const graphView = {scale: 1, x: 0, y: 0};
+let graphDrag = null;
+let graphSize = {width: 0, height: 0};
+
+function graphKind(node) {
+  return node.kind || node.id.split(":", 2)[1]?.split("|", 1)[0] || "record";
+}
+
+function graphKindColor(kind) {
+  return graphKindColors.get(kind) || graphColors[0];
+}
+
+function renderGraphLegend(nodes) {
+  const legend = $("graph-legend");
+  const kinds = [...new Set(nodes.map(graphKind))].sort();
+  for (const kind of kinds) {
+    if (!graphKindColors.has(kind)) {
+      graphKindColors.set(kind, graphColors[graphKindColors.size % graphColors.length]);
+    }
+  }
+  if (!legend) return;
+  legend.replaceChildren();
+  for (const kind of kinds) {
+    const item = document.createElement("span");
+    const swatch = document.createElement("i");
+    swatch.style.setProperty("--kind-color", graphKindColor(kind));
+    item.append(swatch, document.createTextNode(kind));
+    legend.append(item);
+  }
+}
+
+// A bounded, deterministic spring layout puts related records together while
+// keeping unrelated kinds and disconnected components apart. It runs only when
+// the graph gains nodes or edges, never on every frame or selection.
+function layoutGraph(nodes) {
+  positions.clear();
+  const ordered = [...nodes].sort((a, b) =>
+    (a.id === state.selected ? -1 : b.id === state.selected ? 1 : a.id.localeCompare(b.id)));
+  ordered.forEach((node, index) => {
+    const angle = index * 2.399963229728653;
+    const radius = 52 * Math.sqrt(index);
+    positions.set(node.id, {x: Math.cos(angle) * radius, y: Math.sin(angle) * radius});
+  });
+  if (ordered.length < 2) return;
+  const edges = [...state.edges.values()].filter((edge) => positions.has(edge.from) && positions.has(edge.to));
+  for (let step = 0; step < 110; step++) {
+    const delta = new Map(ordered.map((node) => [node.id, {x: 0, y: 0}]));
+    for (let i = 0; i < ordered.length; i++) {
+      const a = positions.get(ordered[i].id);
+      for (let j = i + 1; j < ordered.length; j++) {
+        const b = positions.get(ordered[j].id);
+        const dx = a.x - b.x || 0.01;
+        const dy = a.y - b.y || 0.01;
+        const distance2 = Math.max(400, dx * dx + dy * dy);
+        const strength = Math.min(8, 12000 / distance2) / Math.sqrt(distance2);
+        delta.get(ordered[i].id).x += dx * strength;
+        delta.get(ordered[i].id).y += dy * strength;
+        delta.get(ordered[j].id).x -= dx * strength;
+        delta.get(ordered[j].id).y -= dy * strength;
+      }
+    }
+    for (const edge of edges) {
+      const a = positions.get(edge.from);
+      const b = positions.get(edge.to);
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const distance = Math.max(1, Math.hypot(dx, dy));
+      const strength = (distance - 145) * 0.04 / distance;
+      delta.get(edge.from).x += dx * strength;
+      delta.get(edge.from).y += dy * strength;
+      delta.get(edge.to).x -= dx * strength;
+      delta.get(edge.to).y -= dy * strength;
+    }
+    for (const node of ordered) {
+      const point = positions.get(node.id);
+      const force = delta.get(node.id);
+      point.x += Math.max(-14, Math.min(14, force.x - point.x * 0.003)) * 0.35;
+      point.y += Math.max(-14, Math.min(14, force.y - point.y * 0.003)) * 0.35;
+    }
+  }
+}
+
+function fitGraph() {
+  const rectangle = canvas.getBoundingClientRect();
+  if (!positions.size || !rectangle.width || !rectangle.height) return;
+  const points = [...positions.values()];
+  const minX = Math.min(...points.map((point) => point.x));
+  const maxX = Math.max(...points.map((point) => point.x));
+  const minY = Math.min(...points.map((point) => point.y));
+  const maxY = Math.max(...points.map((point) => point.y));
+  graphView.scale = Math.max(0.2, Math.min(1.35,
+    (rectangle.width - 150) / Math.max(130, maxX - minX),
+    (rectangle.height - 160) / Math.max(130, maxY - minY)));
+  graphView.x = -(minX + maxX) * graphView.scale / 2;
+  graphView.y = -(minY + maxY) * graphView.scale / 2;
+  draw();
+}
+
+function graphScreen(point, rectangle) {
+  return {x: rectangle.width / 2 + graphView.x + point.x * graphView.scale,
+    y: rectangle.height / 2 + graphView.y + point.y * graphView.scale};
+}
+
+function graphHit(x, y, rectangle) {
+  let hit = null;
+  let distance = 19;
+  for (const [id, point] of positions) {
+    const screen = graphScreen(point, rectangle);
+    const candidate = Math.hypot(screen.x - x, screen.y - y);
+    if (candidate < distance) { hit = id; distance = candidate; }
+  }
+  return hit;
+}
+
+function graphZoom(factor, x, y) {
+  const rectangle = canvas.getBoundingClientRect();
+  const anchorX = x ?? rectangle.width / 2;
+  const anchorY = y ?? rectangle.height / 2;
+  const next = Math.max(0.15, Math.min(3.5, graphView.scale * factor));
+  const ratio = next / graphView.scale;
+  graphView.x = anchorX - rectangle.width / 2 -
+    (anchorX - rectangle.width / 2 - graphView.x) * ratio;
+  graphView.y = anchorY - rectangle.height / 2 -
+    (anchorY - rectangle.height / 2 - graphView.y) * ratio;
+  graphView.scale = next;
+  draw();
+}
 
 function draw() {
   const rectangle = canvas.getBoundingClientRect();
-  if (rectangle.width === 0 || rectangle.height === 0) return;
+  if (!rectangle.width || !rectangle.height) return;
   const ratio = devicePixelRatio || 1;
-  canvas.width = rectangle.width * ratio;
-  canvas.height = rectangle.height * ratio;
+  const pixelWidth = Math.round(rectangle.width * ratio);
+  const pixelHeight = Math.round(rectangle.height * ratio);
+  if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
+  }
   context.setTransform(ratio, 0, 0, ratio, 0, 0);
-  const nodes = [...state.nodes.values()];
-  const centerX = rectangle.width / 2;
-  const centerY = rectangle.height / 2;
-  const radius = Math.min(centerX, centerY) * 0.7;
-  nodes.forEach((node, index) => {
-    if (!positions.has(node.id)) {
-      const angle = 2 * Math.PI * index / Math.max(nodes.length, 1);
-      positions.set(node.id, {
-        x: centerX + Math.cos(angle) * radius,
-        y: centerY + Math.sin(angle) * radius,
-      });
-    }
-  });
   context.clearRect(0, 0, rectangle.width, rectangle.height);
-  if (nodes.length === 0) return;
+  const nodes = [...state.nodes.values()];
+  if (!positions.size && nodes.length) {
+    layoutGraph(nodes);
+    fitGraph();
+    return;
+  }
+  renderGraphLegend(nodes);
+  if (!nodes.length) return;
+  context.save();
+  context.translate(rectangle.width / 2 + graphView.x, rectangle.height / 2 + graphView.y);
+  context.scale(graphView.scale, graphView.scale);
+  context.font = "12px 'Space Grotesk', system-ui, sans-serif";
   for (const edge of state.edges.values()) {
     const from = positions.get(edge.from);
     const to = positions.get(edge.to);
@@ -3380,50 +3518,112 @@ function draw() {
     const derived = edgeIsDerived(edge);
     const selected = edge.id === state.selectedEdge;
     context.save();
-    // Derived edges are dashed and amber so a latent similarity assertion is
-    // never mistaken for an asserted relationship at a glance.
     context.setLineDash(derived ? [6, 4] : []);
-    context.lineWidth = selected ? 2.5 : 1;
-    context.strokeStyle = derived ? "#f6c667" : selected ? "#ffd166" : "#536a8d";
+    context.lineWidth = selected ? 2.5 : 1.4;
+    context.strokeStyle = derived ? "#ffb86b" : selected ? "#eaf1ee" : "#46736d";
     context.beginPath();
     context.moveTo(from.x, from.y);
     context.lineTo(to.x, to.y);
     context.stroke();
     context.restore();
-    const score = derived ? edgeDerivationScore(edge) : null;
-    const label = score !== null ? `${edge.type} ~${score}` : edge.type;
-    context.fillStyle = derived ? "#f6c667" : "#8fa3bf";
-    context.fillText(shortLabel(label), (from.x + to.x) / 2, (from.y + to.y) / 2);
-  }
-  for (const node of nodes) {
-    const position = positions.get(node.id);
-    context.beginPath();
-    context.arc(position.x, position.y, node.id === state.selected ? 10 : 7, 0, Math.PI * 2);
-    context.fillStyle = node.id === state.selected ? "#ffd166" : "#55c2ff";
-    context.fill();
-    context.fillStyle = "#e5edf8";
-    context.fillText(shortLabel(nodeName(node, node.id)), position.x + 11, position.y + 4);
-  }
-}
-
-canvas.onclick = (event) => {
-  const rectangle = canvas.getBoundingClientRect();
-  const x = event.clientX - rectangle.left;
-  const y = event.clientY - rectangle.top;
-  let hit = null;
-  let distance = 18;
-  for (const [id, position] of positions) {
-    const candidate = Math.hypot(position.x - x, position.y - y);
-    if (candidate < distance) {
-      hit = id;
-      distance = candidate;
+    if (selected || (state.edges.size < 8 && graphView.scale > 0.65)) {
+      const score = derived ? edgeDerivationScore(edge) : null;
+      const label = shortLabel(score === null ? edge.type : `${edge.type} ~${score}`);
+      const mx = (from.x + to.x) / 2;
+      const my = (from.y + to.y) / 2;
+      const width = context.measureText(label).width + 12;
+      context.fillStyle = "#0b191c";
+      context.fillRect(mx - width / 2, my - 9, width, 18);
+      context.fillStyle = derived ? "#ffb86b" : "#a7c4bc";
+      context.textAlign = "center";
+      context.fillText(label, mx, my + 4);
     }
   }
-  selectNode(hit);
-};
+  const labelBoxes = [];
+  const orderedNodes = [...nodes].sort((a, b) =>
+    (a.id === state.selected ? -1 : b.id === state.selected ? 1 : a.id.localeCompare(b.id)));
+  for (const node of orderedNodes) {
+    const point = positions.get(node.id);
+    if (!point) continue;
+    const selected = node.id === state.selected;
+    const color = graphKindColor(graphKind(node));
+    if (selected) {
+      context.beginPath();
+      context.arc(point.x, point.y, 17, 0, Math.PI * 2);
+      context.fillStyle = "rgba(116,228,192,.18)";
+      context.fill();
+    }
+    context.beginPath();
+    context.arc(point.x, point.y, selected ? 10 : 8, 0, Math.PI * 2);
+    context.fillStyle = color;
+    context.fill();
+    context.lineWidth = 2;
+    context.strokeStyle = "#081014";
+    context.stroke();
+    const label = nodeName(node, node.id);
+    const text = label.length > 24 ? `${label.slice(0, 22)}…` : label;
+    const box = {x: point.x + 14, y: point.y - 8,
+      width: context.measureText(text).width, height: 17};
+    if (selected || !labelBoxes.some((other) =>
+      box.x < other.x + other.width + 5 && box.x + box.width + 5 > other.x &&
+      box.y < other.y + other.height + 4 && box.y + box.height + 4 > other.y)) {
+      context.textAlign = "left";
+      context.fillStyle = selected ? "#eaf1ee" : "#b7cbc5";
+      context.fillText(text, box.x, point.y + 4);
+      labelBoxes.push(box);
+    }
+  }
+  context.restore();
+}
 
+canvas.onwheel = (event) => {
+  event.preventDefault();
+  const rectangle = canvas.getBoundingClientRect();
+  graphZoom(event.deltaY < 0 ? 1.13 : 1 / 1.13,
+    event.clientX - rectangle.left, event.clientY - rectangle.top);
+};
+canvas.onpointerdown = (event) => {
+  if (event.button !== 0) return;
+  graphDrag = {x: event.clientX, y: event.clientY, moved: false};
+  canvas.setPointerCapture(event.pointerId);
+};
+canvas.onpointermove = (event) => {
+  if (!graphDrag) return;
+  const dx = event.clientX - graphDrag.x;
+  const dy = event.clientY - graphDrag.y;
+  if (Math.abs(dx) + Math.abs(dy) > 2) graphDrag.moved = true;
+  if (graphDrag.moved) {
+    graphView.x += dx;
+    graphView.y += dy;
+    canvas.classList.add("dragging");
+    draw();
+  }
+  graphDrag.x = event.clientX;
+  graphDrag.y = event.clientY;
+};
+canvas.onpointerup = (event) => {
+  if (!graphDrag) return;
+  const moved = graphDrag.moved;
+  graphDrag = null;
+  canvas.classList.remove("dragging");
+  if (moved) return;
+  const rectangle = canvas.getBoundingClientRect();
+  selectNode(graphHit(event.clientX - rectangle.left, event.clientY - rectangle.top, rectangle));
+};
+canvas.onpointercancel = () => {
+  graphDrag = null;
+  canvas.classList.remove("dragging");
+};
+if ($("graph-zoom-in")) $("graph-zoom-in").onclick = () => graphZoom(1.25);
+if ($("graph-zoom-out")) $("graph-zoom-out").onclick = () => graphZoom(0.8);
+if ($("graph-fit")) $("graph-fit").onclick = fitGraph;
 new ResizeObserver(() => {
-  positions.clear();
+  const rectangle = canvas.getBoundingClientRect();
+  if (Math.abs(rectangle.width - graphSize.width) > 1 ||
+      Math.abs(rectangle.height - graphSize.height) > 1) {
+    graphSize = {width: rectangle.width, height: rectangle.height};
+    if (positions.size) fitGraph();
+  }
   draw();
 }).observe(canvas);
 renderGraphList();
@@ -3870,6 +4070,8 @@ installProductChatUI();
 // reports unconfigured, no login UI renders, and the sequence is the same as
 // before: identity, then metadata, then documents.
 async function bootstrap() {
+  if (typeof URLSearchParams !== "undefined" &&
+      new URLSearchParams(window.location.search).get("view") === "graph") activate("graph");
   const config = await loadAuthConfig();
   state.auth = config;
   configureLoginUI(config);
