@@ -6,7 +6,7 @@
 // table's postings, and the table's ontology. Results render on the same
 // canvas and lists as the workspace graph. Loaded after app.js and relies on
 // its state, $, authHeaders, apiError, mergeGraph, draw, activate,
-// selectNode, decodedNodeProperties, graphGeneration and capability.
+// selectNode, setGraphSource, decodedNodeProperties, graphGeneration and capability.
 const graphTable = (() => {
   const ROOT = "/api/v1/graph-table";
   let description = null;
@@ -87,6 +87,7 @@ const graphTable = (() => {
     if (!capability("graph_table")) {
       section.hidden = true;
       description = null;
+      if (graphSource === "table") setGraphSource("workspace");
       return;
     }
     const mine = ++generation;
@@ -96,7 +97,7 @@ const graphTable = (() => {
       description = value;
       section.hidden = false;
       // A table-only Explorer should open on its actual graph source.
-      if (!capability("neighborhood")) el("graph-table-active").checked = true;
+      if (!capability("neighborhood")) setGraphSource("table");
       el("graph-table-summary").textContent =
         `Table ${value.table} (${value.schema_id}@${value.version}) under label ${value.label}, ` +
         `read from ${describeStores(value.stores)}. Edges are followed outward only.`;
@@ -109,6 +110,7 @@ const graphTable = (() => {
       // The API conceals the route from readers without its label; the UI
       // must not reveal that a table is mounted either.
       section.hidden = error.status === 404;
+      if (section.hidden && graphSource === "table") setGraphSource("workspace");
       el("graph-table-ontology-body").replaceChildren();
       if (section.hidden) {
         status("");
@@ -141,7 +143,7 @@ const graphTable = (() => {
         node_ids: ids, depth: depth(), fanout: 18, max_nodes: 120,
       });
       if (stale(mine, graphMine)) return;
-      mergeGraph(response.neighborhood);
+      mergeGraph(response.neighborhood, "table");
       const dropped = response.dropped_edges ? ` ${response.dropped_edges} edge(s) point at rows the reader cannot name and were dropped.` : "";
       $("graph-status").textContent = (response.truncated
         ? `Table ${response.table}: expansion truncated by fanout, node budget, or a row's cell bound.`
@@ -168,7 +170,7 @@ const graphTable = (() => {
         status("No path found.");
         return;
       }
-      mergeGraph(response.path);
+      mergeGraph(response.path, "table");
       $("graph-status").textContent = `Table ${response.table}: directed path of ${response.path.edges.length} edge(s).`;
       status(`Path of ${response.path.edges.length} edge(s).`);
       draw();
@@ -182,6 +184,7 @@ const graphTable = (() => {
     const id = el("graph-table-seed").value.trim();
     if (!id || !description) return;
     el("graph-table-active").checked = true;
+    setGraphSource("table");
     const mine = ++generation;
     const graphMine = graphGeneration;
     status(`Loading ${id}…`);
@@ -194,7 +197,7 @@ const graphTable = (() => {
         status(`${id} is in the namespace but the table holds no cell for it.`);
         return;
       }
-      mergeGraph({nodes: response.nodes, edges: []});
+      mergeGraph({nodes: response.nodes, edges: []}, "table");
       activate("graph");
       selectNode(id);
       await expand([id]);
@@ -208,6 +211,7 @@ const graphTable = (() => {
     const term = el("graph-table-term").value.trim();
     if (!term || !description) return;
     el("graph-table-active").checked = true;
+    setGraphSource("table");
     const mine = ++generation;
     const graphMine = graphGeneration;
     status(`Looking up "${term}" in the table's postings…`);
@@ -221,7 +225,7 @@ const graphTable = (() => {
       }
       const nodes = await request("nodes", {ids: ids.slice(0, 64)});
       if (stale(mine, graphMine)) return;
-      mergeGraph({nodes: nodes.nodes, edges: []});
+      mergeGraph({nodes: nodes.nodes, edges: []}, "table");
       status(`${ids.length} node(s) posted under "${term}".`);
       activate("graph");
       selectNode(ids[0]);
@@ -243,6 +247,7 @@ const graphTable = (() => {
     const toggle = el("graph-table-active");
     if (toggle) {
       toggle.onchange = () => {
+        setGraphSource(toggle.checked ? "table" : "workspace");
         $("expand").disabled = !state.selected || !(toggle.checked ? description : capability("neighborhood"));
         status(toggle.checked ? "Expansion and path finding now read the described table." : "Expansion and path finding read the workspace graph.");
       };

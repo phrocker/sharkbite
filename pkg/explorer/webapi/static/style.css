@@ -117,3 +117,56 @@ body.graph-focus #graph{max-width:1400px;margin:0 auto}
 #graph-table-status:empty{display:none}
 /* The header badge keeps identity visible while the graph inspector stays in view. */
 body.graph-focus .right .graph-identity{display:none}
+
+/* Give each view the stage; keep corpus and workspace controls in drawers. */
+header{min-height:65px}
+.shell-actions{display:flex;align-items:center;gap:7px;margin-left:auto}
+.shell-actions button{padding:7px 12px;white-space:nowrap;background:transparent}
+.shell-actions button[aria-expanded=true]{color:var(--accent);border-color:var(--accent);background:#12302b}
+main{display:grid;grid-template-columns:minmax(0,1fr);min-width:0}
+.center{min-width:0;border-right:0;overflow:visible}
+.center>.panel:not(#graph){max-width:1380px;margin:0 auto;padding:26px clamp(18px,3vw,42px)}
+#chat,#evidence,#ontology{max-width:1080px}
+.panel-intro{margin:4px 0 22px}
+.panel-intro h1{font-size:clamp(30px,3vw,42px);line-height:1.1;letter-spacing:-.055em;font-weight:600;margin:8px 0}
+.panel-intro p{margin:0;color:var(--muted)}
+#chat-form,.evidence-search{padding:20px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+#chat-form{gap:10px}
+#chat-form textarea{min-height:150px}
+.evidence-search{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;max-width:none;min-width:0;margin-bottom:18px}
+.evidence-search #query{grid-column:1;grid-row:1;width:100%}
+.evidence-search #modes{grid-column:1;grid-row:2}
+.evidence-search #vector-mode-status{grid-column:1/-1;grid-row:3}
+.evidence-search #search-button{grid-column:2;grid-row:1/3;align-self:stretch;min-width:110px}
+.tabs{overflow-x:auto;scrollbar-width:thin}
+.tab{white-space:nowrap}
+#shell-backdrop:not([hidden]){position:fixed;inset:0;z-index:18;background:rgba(2,10,12,.64)}
+.drawer-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
+.drawer-heading h2{margin:0}
+.drawer-close{padding:5px 10px;background:transparent}
+.advanced-workspace{border-top:1px solid var(--line);padding-top:12px}
+.advanced-workspace summary{cursor:pointer;color:var(--accent);font:500 11px ui-monospace,SFMono-Regular,monospace;letter-spacing:.1em;text-transform:uppercase}
+.advanced-workspace[open] summary{margin-bottom:12px}
+body .left,body:not(.graph-focus) .right{
+  display:block;position:fixed;top:0;bottom:0;width:min(380px,calc(100vw - 24px));
+  height:100dvh;overflow:auto;z-index:20;visibility:hidden;pointer-events:none;
+  background:#0b171a;box-shadow:0 0 36px rgba(0,0,0,.4);
+}
+body .left{left:0;transform:translateX(-102%);border-right:1px solid var(--line)}
+body:not(.graph-focus) .right{right:0;transform:translateX(102%);border-left:1px solid var(--line)}
+body.drawer-sources .left{visibility:visible;pointer-events:auto;transform:none}
+body.drawer-context:not(.graph-focus) .right{visibility:visible;pointer-events:auto;transform:none}
+body.graph-focus .left{display:none}
+body.graph-focus.drawer-sources .left{display:block}
+body.graph-focus main{grid-template-columns:minmax(0,1fr) 300px}
+body.graph-focus .right{position:static;width:auto;height:auto;visibility:visible;pointer-events:auto;transform:none;box-shadow:none;overflow:visible}
+body.graph-focus .right .drawer-heading{display:none}
+body.graph-focus.drawer-context .right{
+  display:block;position:fixed;top:0;bottom:0;right:0;width:min(380px,calc(100vw - 24px));
+  height:100dvh;overflow:auto;z-index:20;transform:none;box-shadow:0 0 36px rgba(0,0,0,.4)
+}
+body.graph-focus.drawer-context .right .drawer-heading{display:flex}
+body.graph-focus.drawer-context .right>section{display:block}
+body.graph-focus.drawer-context .right .graph-identity{display:block}
+@media(max-width:900px){body.graph-focus main{grid-template-columns:minmax(0,1fr)}body.graph-focus .right{grid-column:1}}
+@media(max-width:720px){header{padding:12px 15px}.shell-actions{width:100%;justify-content:flex-end}.center>.panel:not(#graph){padding:18px 15px}.evidence-search{grid-template-columns:1fr;padding:14px}.evidence-search #search-button{grid-column:1;grid-row:4}.evidence-search #vector-mode-status{grid-column:1;grid-row:3}}
