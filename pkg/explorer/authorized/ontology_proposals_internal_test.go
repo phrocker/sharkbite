@@ -132,6 +132,15 @@ func TestPublishedOntologyRemainsDurableWhenFinalGenerationGuardFails(t *testing
 }
 
 func TestOntologyProposalEvidenceRequiresObjectAuthorization(t *testing.T) {
+	t.Run("morphism", func(t *testing.T) {
+		testOntologyProposalEvidenceAuthorization(t, false)
+	})
+	t.Run("additive", func(t *testing.T) {
+		testOntologyProposalEvidenceAuthorization(t, true)
+	})
+}
+
+func testOntologyProposalEvidenceAuthorization(t *testing.T, explicit bool) {
 	ctx := context.Background()
 	at := time.Date(2026, time.September, 6, 0, 0, 0, 0, time.UTC)
 	corpus, err := explorer.Open(t.TempDir())
@@ -184,7 +193,7 @@ func TestOntologyProposalEvidenceRequiresObjectAuthorization(t *testing.T) {
 		Subject: "subject", Actor: "actor",
 		AuthorizationDomain: []byte("domain"),
 		AllowedOperations: []auth.Operation{
-			auth.OperationRead, auth.OperationIngest,
+			auth.OperationRead, auth.OperationIngest, auth.OperationWorkspaceSettingsRead,
 		},
 		PermittedSourceIDs:    [][]byte{[]byte("source-a")},
 		PermittedPolicyIDs:    [][]byte{[]byte("policy")},
@@ -217,6 +226,10 @@ func TestOntologyProposalEvidenceRequiresObjectAuthorization(t *testing.T) {
 	}
 
 	schema, baseVersion := ontologyEvidenceVersions(t, at)
+	makeProposal := ontologyEvidenceProposal
+	if explicit {
+		makeProposal = additiveOntologyEvidenceProposal
+	}
 	allowedEvidence := ontologyEvidenceRef(
 		t, viewA, nil)
 	deniedCitation := ontologyEvidenceRef(
@@ -227,10 +240,15 @@ func TestOntologyProposalEvidenceRequiresObjectAuthorization(t *testing.T) {
 	for index, evidence := range []ontology.EvidenceRef{
 		allowedEvidence, deniedCitation, deniedPath,
 	} {
-		proposal, target := ontologyEvidenceProposal(
+		proposal, target := makeProposal(
 			t, schema, baseVersion, index+2, evidence, at)
 		if err := corpus.CreateOntologyProposal(ctx, proposal, baseVersion); err != nil {
 			t.Fatal(err)
+		}
+		if index == 0 {
+			if err := client.CreateOntologyProposalAtBase(ctx, proposal, baseVersion); err != nil {
+				t.Fatalf("authorized atomic create = %v", err)
+			}
 		}
 		if target.ID() == "" {
 			t.Fatal("target ontology version is empty")
@@ -245,7 +263,7 @@ func TestOntologyProposalEvidenceRequiresObjectAuthorization(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(visible) != 1 ||
-		visible[0].Morphisms()[0].Evidence()[0].ID() != allowedEvidence.ID() {
+		visible[0].Evidence()[0].ID() != allowedEvidence.ID() {
 		t.Fatalf("visible proposals = %#v, want only source-a evidence", visible)
 	}
 	hiddenState, err := client.OntologyProposalMutationState(
@@ -273,6 +291,9 @@ func TestOntologyProposalEvidenceRequiresObjectAuthorization(t *testing.T) {
 	if active.ID() != published.ProposedVersion().ID() {
 		t.Fatalf("active ontology was filtered by hidden evidence: %q", active.ID())
 	}
+	if _, err := client.PublishedOntologyCatalog(ctx, baseVersion); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		t.Fatalf("unauthorized published catalog = %v, want not found", err)
+	}
 	if _, err := client.TransitionOntologyProposal(
 		ctx, deniedProposals[1].ID(), ontology.ProposalSubmitted,
 		"governor", "unauthorized evidence", at.Add(time.Minute),
@@ -280,7 +301,7 @@ func TestOntologyProposalEvidenceRequiresObjectAuthorization(t *testing.T) {
 		t.Fatalf("unauthorized evidence transition = %v, want non-disclosing not found", err)
 	}
 
-	allowed, _ := ontologyEvidenceProposal(
+	allowed, _ := makeProposal(
 		t, schema, baseVersion, 5, allowedEvidence, at)
 	if err := client.CreateOntologyProposal(ctx, allowed, baseVersion); err != nil {
 		t.Fatalf("authorized evidence create = %v", err)
@@ -304,13 +325,18 @@ func TestOntologyProposalEvidenceRequiresObjectAuthorization(t *testing.T) {
 	for index, evidence := range []ontology.EvidenceRef{
 		deniedCitation, deniedPath, outsideRange, forgedQuote,
 	} {
-		rejected, _ := ontologyEvidenceProposal(
+		rejected, _ := makeProposal(
 			t, schema, baseVersion, index+6, evidence, at)
 		if err := client.CreateOntologyProposal(
 			ctx, rejected, baseVersion,
 		); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
 			t.Fatalf("unauthorized evidence create %d = %v, want non-disclosing not found",
 				index, err)
+		}
+		if err := client.CreateOntologyProposalAtBase(
+			ctx, rejected, baseVersion,
+		); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+			t.Fatalf("unauthorized atomic evidence create %d = %v, want not found", index, err)
 		}
 	}
 	stored, err := corpus.OntologyProposals(ctx)
@@ -333,6 +359,46 @@ func TestOntologyProposalEvidenceRequiresObjectAuthorization(t *testing.T) {
 	if len(pathA.Nodes) != 2 || len(pathA.Edges) != 1 {
 		t.Fatalf("authorized evidence path fixture = %#v", pathA)
 	}
+	registerOntologyEvidenceDocument(
+		t, policyStore, "document-a", "revision-a-tightened", "section-a-tightened",
+		"contains-a-tightened", ruleB, at.Add(time.Minute))
+	visible, err = client.OntologyProposals(ctx)
+	if err != nil || len(visible) != 0 {
+		t.Fatalf("proposals after source tightening = %#v, %v", visible, err)
+	}
+	if _, err := client.TransitionOntologyProposal(ctx, allowed.ID(),
+		ontology.ProposalSubmitted, "governor", "tightened", at.Add(2*time.Minute),
+	); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		t.Fatalf("transition after source tightening = %v, want not found", err)
+	}
+}
+
+func additiveOntologyEvidenceProposal(
+	t *testing.T,
+	schema ontology.OntologySchema,
+	base ontology.OntologyVersion,
+	version int,
+	evidence ontology.EvidenceRef,
+	at time.Time,
+) (ontology.GovernedProposal, ontology.OntologyVersion) {
+	t.Helper()
+	contractor, err := ontology.NewConceptDefinition("contractor", "Contractor", "", nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	target, err := ontology.NewOntologyVersion(
+		schema, string(rune('0'+version)), at.Add(time.Duration(version)*time.Second),
+		append(base.Concepts(), contractor), base.Relationships(), base.Properties(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	proposal, err := ontology.NewGovernedProposalWithEvidence(
+		schema, base, target, nil, []ontology.EvidenceRef{evidence},
+		"author", "exposed source", at.Add(time.Duration(version+10)*time.Second), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return proposal, target
 }
 
 type generationChangingProposalBase struct {

@@ -1082,10 +1082,17 @@ func assertionMatchesEvidenceEdge(
 	edge graph.Edge,
 ) bool {
 	target, ok := assertion.Object().ReferenceValue()
-	return ok &&
-		edge.From == assertion.Subject() &&
-		edge.To == target &&
-		edge.Type == string(assertion.Predicate()) &&
+	if !ok || edge.From != assertion.Subject() || edge.To != target {
+		return false
+	}
+	// Shared extracted edges carry the stable predicate in their relationship
+	// property; their key is a display type and their weight is always 1.
+	// Producer-specific confidence remains on the separately verified assertion.
+	if canonical, shared := explorer.CanonicalExtractedRelation(edge); shared {
+		return reflect.DeepEqual(edge, canonical) &&
+			edge.Properties["ontology_relationship_id"] == string(assertion.Predicate())
+	}
+	return edge.Type == string(assertion.Predicate()) &&
 		math.Float64bits(float64(edge.Weight)) ==
 			math.Float64bits(float64(assertion.Confidence()))
 }

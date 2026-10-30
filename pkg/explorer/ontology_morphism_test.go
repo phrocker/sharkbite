@@ -57,8 +57,14 @@ func TestPublishedMorphismAndHistoricAssertionSurviveRestart(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	proposal, err := ontology.NewGovernedProposalWithMorphisms(
+	exposure, err := ontology.NewEvidenceRef(evidence.Citation(), "independently exposed source",
+		shoal.Metadata{"exposure": "uncited"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	proposal, err := ontology.NewGovernedProposalWithEvidence(
 		schema, base, target, []ontology.OntologyMorphism{morphism},
+		[]ontology.EvidenceRef{exposure},
 		"author", "rename", at.Add(2*time.Second), nil)
 	if err != nil {
 		t.Fatal(err)
@@ -94,6 +100,13 @@ func TestPublishedMorphismAndHistoricAssertionSurviveRestart(t *testing.T) {
 	if err != nil || len(proposals) != 1 || len(proposals[0].Morphisms()) != 1 ||
 		proposals[0].State() != ontology.ProposalPublished {
 		t.Fatalf("restored proposals = %#v, err = %v", proposals, err)
+	}
+	if len(proposals[0].ExplicitEvidence()) != 1 || len(proposals[0].Evidence()) != 2 {
+		t.Fatal("restart lost explicit or morphism evidence")
+	}
+	union, found, err := corpus.OntologyProposalEvidence(ctx, proposal.ID())
+	if err != nil || !found || len(union) != 2 {
+		t.Fatalf("complete persisted evidence union = %#v, %v, %v", union, found, err)
 	}
 	provenance, _ := ontology.NewExtractionProvenance(
 		"provider", "model", "1", "prompt", "1", "extractor", "1", nil)

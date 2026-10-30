@@ -41,6 +41,7 @@ to be an agent runtime or a model vendor.
 | Explore a cited local corpus | [Explorer quickstart](#explorer) |
 | Use the browser workspace | [Web workspace](#web-workspace) |
 | Measure local model decisions | [Local decisions](docs/local-decisions.md) |
+| Propose evidence-backed ontology changes | [Governed discovery](docs/ontology-discovery.md) |
 | Build against the knowledge contracts | [Public packages](#public-packages) |
 | Run a local sorted KV engine | [Embedded engine](#embedded-engine) |
 | Evaluate Accumulo compatibility | [Compatibility harness](test/accumulo/README.md) |

@@ -129,6 +129,7 @@ type persistedOntologyProposal struct {
 	CreatedAt       time.Time
 	Metadata        shoal.Metadata
 	Morphisms       []persistedOntologyMorphism
+	Evidence        []persistedEvidenceRef
 	transitions     []persistedProposalTransition
 }
 
@@ -394,11 +395,7 @@ func (e *Explorer) OntologyProposalEvidence(
 		return nil, false, shoal.WrapError(
 			shoal.ErrorInternal, "stored ontology proposal is invalid", err)
 	}
-	var evidence []ontology.EvidenceRef
-	for _, morphism := range proposal.Morphisms() {
-		evidence = append(evidence, morphism.Evidence()...)
-	}
-	return evidence, true, nil
+	return proposal.Evidence(), true, nil
 }
 
 // ResolveOntologyEvidenceCitation validates and resolves an exact citation
@@ -440,6 +437,34 @@ func (e *Explorer) CreateOntologyProposal(
 	proposal ontology.GovernedProposal,
 	baseVersion ontology.OntologyVersion,
 ) error {
+	return e.createOntologyProposal(ctx, proposal, baseVersion, false)
+}
+
+// CreateOntologyProposalAtBase atomically rejects a stale published base and
+// inserts a draft. Unlike CreateOntologyProposal, it requires the base to
+// remain the published tip. A different proposal for the same base and target
+// version is rejected with a conflict, atomically with the insertion.
+func (e *Explorer) CreateOntologyProposalAtBase(
+	ctx context.Context,
+	proposal ontology.GovernedProposal,
+	baseVersion ontology.OntologyVersion,
+) error {
+	if err := baseVersion.Validate(); err != nil {
+		return err
+	}
+	baseID, hasBase := proposal.BaseVersionID()
+	if !hasBase || baseID != baseVersion.ID() {
+		return shoal.NewError(shoal.ErrorInvalidArgument, "proposal base version does not match")
+	}
+	return e.createOntologyProposal(ctx, proposal, baseVersion, true)
+}
+
+func (e *Explorer) createOntologyProposal(
+	ctx context.Context,
+	proposal ontology.GovernedProposal,
+	baseVersion ontology.OntologyVersion,
+	requireActiveBase bool,
+) error {
 	if err := contextError(ctx); err != nil {
 		return err
 	}
@@ -464,6 +489,31 @@ func (e *Explorer) CreateOntologyProposal(
 	}
 	if err := e.requireCertainOntologyMutationLocked(); err != nil {
 		return err
+	}
+	if requireActiveBase {
+		proposals := make([]ontology.GovernedProposal, 0, len(e.ontologyProposals))
+		for _, stored := range e.ontologyProposals {
+			value, err := stored.proposal()
+			if err != nil {
+				return shoal.WrapError(shoal.ErrorInternal, "stored ontology proposal is invalid", err)
+			}
+			proposals = append(proposals, value)
+		}
+		catalog, err := NewPublishedOntologyCatalog(baseVersion, proposals)
+		if err != nil {
+			return err
+		}
+		if catalog.Active().ID() != baseVersion.ID() {
+			return shoal.NewError(shoal.ErrorConflict, "proposal base has a published successor")
+		}
+		for _, previous := range proposals {
+			previousBase, hasBase := previous.BaseVersionID()
+			if hasBase && previousBase == baseVersion.ID() &&
+				previous.ProposedVersion().ID() == proposal.ProposedVersion().ID() &&
+				previous.ID() != proposal.ID() {
+				return shoal.NewError(shoal.ErrorConflict, "equivalent ontology candidate already exists")
+			}
+		}
 	}
 	if existing := e.ontologyProposals[proposal.ID()]; existing != nil {
 		if existing.sameBase(record) {
@@ -787,9 +837,20 @@ func (p *persistedOntologyProposal) proposalBase() (ontology.GovernedProposal, e
 		}
 		morphisms = append(morphisms, morphism)
 	}
-	proposal, err := ontology.NewGovernedProposalWithMorphisms(
-		schema, base, proposed, morphisms,
-		p.ProposedBy, p.Rationale, p.CreatedAt, p.Metadata)
+	var proposal ontology.GovernedProposal
+	if len(p.Evidence) > 0 {
+		evidence, restoreErr := restoreProposalEvidence(p.Evidence)
+		if restoreErr != nil {
+			return ontology.GovernedProposal{}, restoreErr
+		}
+		proposal, err = ontology.NewGovernedProposalWithEvidence(
+			schema, base, proposed, morphisms, evidence,
+			p.ProposedBy, p.Rationale, p.CreatedAt, p.Metadata)
+	} else {
+		proposal, err = ontology.NewGovernedProposalWithMorphisms(
+			schema, base, proposed, morphisms,
+			p.ProposedBy, p.Rationale, p.CreatedAt, p.Metadata)
+	}
 	if err != nil {
 		return ontology.GovernedProposal{}, err
 	}
@@ -800,6 +861,13 @@ func (p *persistedOntologyProposal) proposalBase() (ontology.GovernedProposal, e
 }
 
 func (p *persistedOntologyProposal) sameBase(other persistedOntologyProposal) bool {
+	if len(p.Evidence) > 0 || len(other.Evidence) > 0 {
+		// Embedded records may restore empty slices as nil. Compare the
+		// canonical immutable values rather than their storage representation.
+		left, leftErr := p.proposalBase()
+		right, rightErr := other.proposalBase()
+		return leftErr == nil && rightErr == nil && reflect.DeepEqual(left, right)
+	}
 	left := *p
 	left.transitions = nil
 	other.transitions = nil
@@ -842,6 +910,11 @@ func persistOntologyProposal(
 		}
 		record.Morphisms = append(record.Morphisms, persisted)
 	}
+	var err error
+	record.Evidence, err = persistProposalEvidence(proposal.ExplicitEvidence())
+	if err != nil {
+		return persistedOntologyProposal{}, err
+	}
 	return record, nil
 }
 
@@ -854,28 +927,35 @@ func persistOntologyMorphism(
 		Discriminator:    morphism.Discriminator().Choices(),
 		Rationale:        morphism.Rationale(), Metadata: morphism.Metadata(),
 	}
-	for _, evidence := range morphism.Evidence() {
-		if _, derived := evidence.Derivation(); derived {
-			return persistedOntologyMorphism{}, shoal.NewError(
-				shoal.ErrorInvalidArgument,
-				"ontology morphism persistence requires citation evidence",
-			)
-		}
-		path, hasPath := evidence.Path()
-		record.Evidence = append(record.Evidence, persistedEvidenceRef{
-			Citation: evidence.Citation(), Quote: evidence.Quote(),
-			Path: path, HasPath: hasPath, Metadata: evidence.Metadata(),
-		})
+	var err error
+	record.Evidence, err = persistProposalEvidence(morphism.Evidence())
+	if err != nil {
+		return persistedOntologyMorphism{}, err
 	}
 	return record, nil
 }
 
-func restoreOntologyMorphism(
-	record persistedOntologyMorphism,
-	source, target ontology.OntologyVersion,
-) (ontology.OntologyMorphism, error) {
-	evidence := make([]ontology.EvidenceRef, 0, len(record.Evidence))
-	for _, item := range record.Evidence {
+func persistProposalEvidence(evidenceRefs []ontology.EvidenceRef) ([]persistedEvidenceRef, error) {
+	var records []persistedEvidenceRef
+	for _, evidence := range evidenceRefs {
+		if _, derived := evidence.Derivation(); derived {
+			return nil, shoal.NewError(
+				shoal.ErrorInvalidArgument,
+				"ontology proposal persistence requires citation evidence",
+			)
+		}
+		path, hasPath := evidence.Path()
+		records = append(records, persistedEvidenceRef{
+			Citation: evidence.Citation(), Quote: evidence.Quote(),
+			Path: path, HasPath: hasPath, Metadata: evidence.Metadata(),
+		})
+	}
+	return records, nil
+}
+
+func restoreProposalEvidence(records []persistedEvidenceRef) ([]ontology.EvidenceRef, error) {
+	evidence := make([]ontology.EvidenceRef, 0, len(records))
+	for _, item := range records {
 		var options []ontology.EvidenceOption
 		if item.HasPath {
 			options = append(options, ontology.WithEvidencePath(item.Path))
@@ -883,12 +963,22 @@ func restoreOntologyMorphism(
 		ref, err := ontology.NewEvidenceRef(
 			item.Citation, item.Quote, item.Metadata, options...)
 		if err != nil {
-			return ontology.OntologyMorphism{}, err
+			return nil, err
 		}
 		evidence = append(evidence, ref)
 	}
+	return evidence, nil
+}
+
+func restoreOntologyMorphism(
+	record persistedOntologyMorphism,
+	source, target ontology.OntologyVersion,
+) (ontology.OntologyMorphism, error) {
+	evidence, err := restoreProposalEvidence(record.Evidence)
+	if err != nil {
+		return ontology.OntologyMorphism{}, err
+	}
 	var discriminator ontology.MorphismDiscriminator
-	var err error
 	if record.Kind == ontology.MorphismSplit {
 		discriminator, err = ontology.NewMorphismDiscriminator(
 			record.DiscriminatorKey, record.Discriminator)

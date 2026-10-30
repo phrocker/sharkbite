@@ -64,6 +64,25 @@ func (c *Client) CreateOntologyProposal(
 	proposal ontology.GovernedProposal,
 	baseVersion ontology.OntologyVersion,
 ) error {
+	return c.createOntologyProposal(ctx, proposal, baseVersion, false)
+}
+
+// CreateOntologyProposalAtBase preserves proposal evidence authority while
+// requiring the store to atomically reject a stale published base.
+func (c *Client) CreateOntologyProposalAtBase(
+	ctx context.Context,
+	proposal ontology.GovernedProposal,
+	baseVersion ontology.OntologyVersion,
+) error {
+	return c.createOntologyProposal(ctx, proposal, baseVersion, true)
+}
+
+func (c *Client) createOntologyProposal(
+	ctx context.Context,
+	proposal ontology.GovernedProposal,
+	baseVersion ontology.OntologyVersion,
+	requireActiveBase bool,
+) error {
 	store, err := c.ontologyProposalStore()
 	if err != nil {
 		return err
@@ -94,7 +113,19 @@ func (c *Client) CreateOntologyProposal(
 	if err := guard.Check(ctx); err != nil {
 		return err
 	}
-	if err := store.CreateOntologyProposal(ctx, proposal, baseVersion); err != nil {
+	if requireActiveBase {
+		atomicStore, ok := store.(interface {
+			CreateOntologyProposalAtBase(context.Context, ontology.GovernedProposal, ontology.OntologyVersion) error
+		})
+		if !ok {
+			return shoal.NewError(shoal.ErrorUnavailable,
+				"workspace capability \"atomic ontology proposal creation\" is unavailable")
+		}
+		err = atomicStore.CreateOntologyProposalAtBase(ctx, proposal, baseVersion)
+	} else {
+		err = store.CreateOntologyProposal(ctx, proposal, baseVersion)
+	}
+	if err != nil {
 		return directBaseError(err)
 	}
 	if err := guard.Check(ctx); err != nil {
@@ -431,13 +462,11 @@ func (c *Client) ontologyProposalEvidenceAllows(
 	if err := proposal.Validate(); err != nil {
 		return false, inconsistentBase()
 	}
-	for _, morphism := range proposal.Morphisms() {
-		for _, evidence := range morphism.Evidence() {
-			allowed, err := c.ontologyEvidenceAllows(
-				ctx, evidence, decision, operation, now, stored)
-			if err != nil || !allowed {
-				return allowed, err
-			}
+	for _, evidence := range proposal.Evidence() {
+		allowed, err := c.ontologyEvidenceAllows(
+			ctx, evidence, decision, operation, now, stored)
+		if err != nil || !allowed {
+			return allowed, err
 		}
 	}
 	return true, nil
