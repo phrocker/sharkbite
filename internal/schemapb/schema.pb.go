@@ -192,9 +192,13 @@ type TableSchema struct {
 	// Embedding families.
 	Vectors []*VectorSchema `protobuf:"bytes,7,rep,name=vectors,proto3" json:"vectors,omitempty"`
 	// Term posting namespaces.
-	Postings      []*PostingSchema `protobuf:"bytes,8,rep,name=postings,proto3" json:"postings,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Postings []*PostingSchema `protobuf:"bytes,8,rep,name=postings,proto3" json:"postings,omitempty"`
+	// When true, readers must evaluate each cell's ColumnVisibility against
+	// the caller's grants. A reader without caller authorizations may read
+	// only cells whose visibility is empty.
+	CellVisibility bool `protobuf:"varint,9,opt,name=cell_visibility,json=cellVisibility,proto3" json:"cell_visibility,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *TableSchema) Reset() {
@@ -281,6 +285,13 @@ func (x *TableSchema) GetPostings() []*PostingSchema {
 		return x.Postings
 	}
 	return nil
+}
+
+func (x *TableSchema) GetCellVisibility() bool {
+	if x != nil {
+		return x.CellVisibility
+	}
+	return false
 }
 
 // NodeSchema describes one row namespace holding nodes.
@@ -693,7 +704,7 @@ var File_proto_schema_proto protoreflect.FileDescriptor
 
 const file_proto_schema_proto_rawDesc = "" +
 	"\n" +
-	"\x12proto/schema.proto\x12\x0fshoal.schema.v1\"\xd7\x02\n" +
+	"\x12proto/schema.proto\x12\x0fshoal.schema.v1\"\x80\x03\n" +
 	"\vTableSchema\x12\x14\n" +
 	"\x05table\x18\x01 \x01(\tR\x05table\x12\x1b\n" +
 	"\tschema_id\x18\x02 \x01(\tR\bschemaId\x12\x18\n" +
@@ -702,7 +713,8 @@ const file_proto_schema_proto_rawDesc = "" +
 	"\x05nodes\x18\x05 \x03(\v2\x1b.shoal.schema.v1.NodeSchemaR\x05nodes\x121\n" +
 	"\x05edges\x18\x06 \x03(\v2\x1b.shoal.schema.v1.EdgeSchemaR\x05edges\x127\n" +
 	"\avectors\x18\a \x03(\v2\x1d.shoal.schema.v1.VectorSchemaR\avectors\x12:\n" +
-	"\bpostings\x18\b \x03(\v2\x1e.shoal.schema.v1.PostingSchemaR\bpostings\"\xd4\x02\n" +
+	"\bpostings\x18\b \x03(\v2\x1e.shoal.schema.v1.PostingSchemaR\bpostings\x12'\n" +
+	"\x0fcell_visibility\x18\t \x01(\bR\x0ecellVisibility\"\xd4\x02\n" +
 	"\n" +
 	"NodeSchema\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1d\n" +

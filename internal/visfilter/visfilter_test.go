@@ -57,6 +57,20 @@ func TestEvaluator_AndOr(t *testing.T) {
 	}
 }
 
+func TestPredicateEvaluatorUsesSameGrammarAndFailsClosed(t *testing.T) {
+	e := NewPredicateEvaluator(func(label []byte) bool { return string(label) == "A" })
+	for _, tc := range []struct {
+		cv   string
+		want bool
+	}{
+		{"", true}, {"A", true}, {"A|B", true}, {"A&B", false}, {"(A|B)&C", false}, {"A&", false}, {"\"A\"", false},
+	} {
+		if got := e.Visible([]byte(tc.cv)); got != tc.want {
+			t.Fatalf("Visible(%q) = %t, want %t", tc.cv, got, tc.want)
+		}
+	}
+}
+
 func TestEvaluator_Cache(t *testing.T) {
 	auths := NewAuthorizations([]byte("A"), []byte("B"))
 	e := NewEvaluator(auths)

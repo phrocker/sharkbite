@@ -6,14 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phrocker/shoal-oss/pkg/decision"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
 func classRecordsFixture(t *testing.T) ClassRecords {
 	t.Helper()
 	now := time.Date(2026, 10, 6, 12, 0, 0, 0, time.UTC)
-	class := decision.DecisionClass{TaskID: "task", QuestionID: "q", PolicyID: "policy", Label: "inspect"}
+	class := DecisionClass{TaskID: "task", QuestionID: "q", PolicyID: "policy", Label: "inspect"}
 	id, err := class.ID()
 	if err != nil {
 		t.Fatal(err)

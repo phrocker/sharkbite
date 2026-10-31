@@ -203,6 +203,112 @@ func TestBrowsePagesLiveRecordsByNamespaceAndKind(t *testing.T) {
 	}
 }
 
+func TestCellVisibilityWithholdsAttributesAndEdgesBeforeWalk(t *testing.T) {
+	eng := openEngine(t, "graph", tableschema.Table)
+	schema := foremanSchema(1)
+	schema.CellVisibility = true
+	describe(t, eng, schema)
+	put := func(target *engine.Engine, row, cf, cq, cv, value string) {
+		m, err := cclient.NewMutation([]byte(row))
+		if err != nil {
+			t.Fatal(err)
+		}
+		m.Put([]byte(cf), []byte(cq), []byte(cv), cclient.MutationLatestTimestamp, []byte(value))
+		if err := target.Write("graph", []*cclient.Mutation{m}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	low, high := openEngine(t, "graph"), openEngine(t, "graph")
+	describe(t, low, schema)
+	describe(t, high, schema)
+	for _, c := range []struct{ row, cf, cq, cv, value string }{
+		{"ent:service|api", "service", "name", "", "api"},
+		{"ent:service|api", "service", "secret", "B", "withheld"},
+		{"ent:service|api", "edge", edgeCQ("owns", "ent:host|h1"), "A", ""},
+		{"ent:service|api", "edge", edgeCQ("owns", "ent:host|h2"), "B", ""},
+		{"ent:service|api", "edge", edgeCQ("owns", "ent:secret|one"), "A", ""},
+		{"ent:host|h1", "host", "name", "", "h1"},
+		{"ent:host|h2", "host", "name", "", "h2"},
+		{"ent:secret|one", "secret", "name", "B", "hidden row"},
+		{"idx:secret", "", "ent:secret|one", "", ""},
+		{"idx:host", "", "ent:host|h1", "A", ""},
+	} {
+		put(eng, c.row, c.cf, c.cq, c.cv, c.value)
+		owner := low
+		if c.row >= "ent:host|h2" {
+			owner = high
+		}
+		put(owner, c.row, c.cf, c.cq, c.cv, c.value)
+	}
+	r := openReader(t, graphtable.NewEngineStore(eng), "graph")
+	shards, err := graphtable.NewSharded([]graphtable.Shard{{Name: "low", End: []byte("ent:host|h2"), Store: graphtable.NewEngineStore(low)}, {Name: "high", Start: []byte("ent:host|h2"), Store: graphtable.NewEngineStore(high)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sharded := openReader(t, shards, "graph")
+	ctx := graphtable.WithCellVisibility(context.Background(), func(cv []byte) bool { return string(cv) == "A" })
+	got, err := r.Neighborhood(ctx, graphtable.NeighborhoodRequest{Seeds: []string{"ent:service|api"}, Depth: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ids := nodeIDs(got.Nodes); !reflect.DeepEqual(ids, []string{"ent:service|api", "ent:host|h1"}) || got.DroppedEdges != 2 || len(got.Edges) != 1 || len(got.Nodes[0].Attributes) != 1 {
+		t.Fatalf("authorized neighborhood = %+v", got)
+	}
+	shardedGot, err := sharded.Neighborhood(ctx, graphtable.NeighborhoodRequest{Seeds: []string{"ent:service|api"}, Depth: 1})
+	if err != nil || !reflect.DeepEqual(got, shardedGot) {
+		t.Fatalf("sharded visibility walk = %+v, %v; one store %+v", shardedGot, err, got)
+	}
+	onePath, oneFound, err := r.Path(ctx, "ent:service|api", "ent:host|h1", 2, 0, 0)
+	if err != nil || !oneFound {
+		t.Fatalf("visible path = %+v, %t, %v", onePath, oneFound, err)
+	}
+	twoPath, twoFound, err := sharded.Path(ctx, "ent:service|api", "ent:host|h1", 2, 0, 0)
+	if err != nil || !twoFound || !reflect.DeepEqual(onePath, twoPath) {
+		t.Fatalf("sharded visible path = %+v, %t, %v", twoPath, twoFound, err)
+	}
+	if _, found, err := r.Path(ctx, "ent:service|api", "ent:host|h2", 2, 0, 0); err != nil || found {
+		t.Fatalf("path through hidden edge = %t, %v", found, err)
+	}
+	if _, found, err := r.Path(ctx, "ent:service|api", "ent:secret|one", 2, 0, 0); err != nil || found {
+		t.Fatalf("path to hidden-only target = %t, %v", found, err)
+	}
+	if _, found, err := r.Path(ctx, "ent:secret|one", "ent:secret|one", 2, 0, 0); err != nil || found {
+		t.Fatalf("path for hidden-only seed = %t, %v", found, err)
+	}
+	hiddenSeed, err := r.Neighborhood(ctx, graphtable.NeighborhoodRequest{Seeds: []string{"ent:secret|one"}, Depth: 1})
+	if err != nil || len(hiddenSeed.Nodes) != 0 {
+		t.Fatalf("hidden-only seed = %+v, %v", hiddenSeed, err)
+	}
+	without, err := r.Neighborhood(context.Background(), graphtable.NeighborhoodRequest{Seeds: []string{"ent:service|api"}, Depth: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ids := nodeIDs(without.Nodes); !reflect.DeepEqual(ids, []string{"ent:service|api"}) || without.DroppedEdges != 3 {
+		t.Fatalf("ungranted neighborhood = %+v", without)
+	}
+	nodes, err := r.Nodes(ctx, []string{"ent:secret|one"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if nodes[0].Found || len(nodes[0].Attributes) != 0 {
+		t.Fatalf("hidden-only row = %+v", nodes[0])
+	}
+	page, err := r.Browse(ctx, graphtable.BrowseRequest{Namespace: "entity", Kind: "secret", Limit: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page.Nodes) != 0 {
+		t.Fatalf("hidden-only browse = %+v", page)
+	}
+	hits, err := r.Terms(ctx, []string{"secret", "host"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hits[0].NodeIDs) != 0 || !reflect.DeepEqual(hits[1].NodeIDs, []string{"ent:host|h1"}) {
+		t.Fatalf("term visibility = %+v", hits)
+	}
+}
+
 func TestOpenReadsTheNewestDescriptorThroughTheStore(t *testing.T) {
 	eng := openEngine(t, "graph")
 	describe(t, eng, foremanSchema(1))

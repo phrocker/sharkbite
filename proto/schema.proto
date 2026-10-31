@@ -63,6 +63,10 @@ message TableSchema {
   repeated VectorSchema vectors = 7;
   // Term posting namespaces.
   repeated PostingSchema postings = 8;
+  // When true, readers must evaluate each cell's ColumnVisibility against
+  // the caller's grants. A reader without caller authorizations may read
+  // only cells whose visibility is empty.
+  bool cell_visibility = 9;
 }
 
 // ValueEncoding says how a cell value is encoded.

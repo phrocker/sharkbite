@@ -69,8 +69,9 @@ func (a *Authorizations) HasLabel(label []byte) bool {
 //
 // NOT goroutine-safe. One Evaluator per scan thread.
 type Evaluator struct {
-	auths *Authorizations
-	cache map[string]*node
+	auths        *Authorizations
+	labelAllowed func([]byte) bool
+	cache        map[string]*node
 }
 
 // NewEvaluator constructs an Evaluator over auths. Pre-allocates a
@@ -80,6 +81,14 @@ func NewEvaluator(auths *Authorizations) *Evaluator {
 		auths: auths,
 		cache: make(map[string]*node, 16),
 	}
+}
+
+// NewPredicateEvaluator evaluates each parsed label with a caller-supplied
+// grant check. It shares the same CV parser and fail-closed behavior as
+// NewEvaluator, while allowing grants whose physical epoch is decided at
+// read time. The predicate and evaluator must be used by one goroutine.
+func NewPredicateEvaluator(allowed func([]byte) bool) *Evaluator {
+	return &Evaluator{labelAllowed: allowed, cache: make(map[string]*node, 16)}
 }
 
 // Visible reports whether a cell with the given CV bytes is visible
@@ -105,7 +114,7 @@ func (e *Evaluator) Visible(cv []byte) bool {
 		if n == nil {
 			return false // cached parse failure
 		}
-		return evalNode(n, e.auths)
+		return e.evaluate(n)
 	}
 	n, err := parse(cv)
 	key := string(cv) // materialize the cache key (one alloc per unique CV)
@@ -114,7 +123,39 @@ func (e *Evaluator) Visible(cv []byte) bool {
 		return false
 	}
 	e.cache[key] = n
+	return e.evaluate(n)
+}
+
+func (e *Evaluator) evaluate(n *node) bool {
+	if e.labelAllowed != nil {
+		return evalNodePredicate(n, e.labelAllowed)
+	}
+	if e.auths == nil {
+		return false
+	}
 	return evalNode(n, e.auths)
+}
+
+func evalNodePredicate(n *node, allowed func([]byte) bool) bool {
+	switch n.kind {
+	case kindLabel:
+		return allowed(n.label)
+	case kindAnd:
+		for _, c := range n.children {
+			if !evalNodePredicate(c, allowed) {
+				return false
+			}
+		}
+		return true
+	case kindOr:
+		for _, c := range n.children {
+			if evalNodePredicate(c, allowed) {
+				return true
+			}
+		}
+		return false
+	}
+	return false
 }
 
 // CacheSize returns the number of distinct CV byte strings the
