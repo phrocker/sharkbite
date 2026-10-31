@@ -34,6 +34,7 @@ const state = {
     decision_registrations: false,
     decision_datasets: false,
     decision_outcomes: false,
+    decision_classes: false,
     decision_adjudications: false,
     decision_learning: false,
     graph_table: false,

@@ -327,6 +327,17 @@ func FreshExport(ctx context.Context, r *Registry, resolver auth.Resolver, id sh
 	return service.Export(ctx, id)
 }
 
+// FreshClassSample takes the per-target class material of the sealed cohort
+// under the same authority session as an export, so a count never includes a
+// target an export would refuse.
+func FreshClassSample(ctx context.Context, r *Registry, resolver auth.Resolver, id shoal.ID) (decisiondatasets.Sample, error) {
+	service, _, e := ExportSession(ctx, r, resolver, id)
+	if e != nil {
+		return decisiondatasets.Sample{}, e
+	}
+	return service.ClassSample(ctx, id)
+}
+
 type FreshDatasetExporter struct {
 	r        *Registry
 	resolver auth.Resolver

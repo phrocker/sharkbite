@@ -163,6 +163,88 @@
     };
   }
 
+  function encodeWireID(value) {
+    const bytes = new TextEncoder().encode(value);
+    let binary = "";
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  }
+
+  // A datetime-local value is read as UTC, because every record time the host
+  // states is UTC and the field is labelled so.
+  function utcStamp(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(value);
+    if (!match) throw new Error("times must be YYYY-MM-DDTHH:MM[:SS]");
+    const [, y, mo, d, h, mi, sec] = match;
+    const t = Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(sec || 0));
+    const date = new Date(t);
+    // Date.UTC rolls an out-of-range field over into the next one; a time
+    // that does not read back as written is refused, not reinterpreted.
+    const same = !Number.isNaN(t) && date.getUTCFullYear() === Number(y) && date.getUTCMonth() + 1 === Number(mo)
+      && date.getUTCDate() === Number(d) && date.getUTCHours() === Number(h) && date.getUTCMinutes() === Number(mi)
+      && date.getUTCSeconds() === Number(sec || 0);
+    if (!same) throw new Error("invalid time: a field is out of range");
+    return date.toISOString().replace(/\.000Z$/, "Z");
+  }
+
+  function renderClassRecords(records) {
+    const summary = $("decision-classes-summary");
+    if (!summary) return;
+    summary.textContent = "";
+    const head = document.createElement("p");
+    head.className = "muted";
+    head.textContent = `Cohort cutoff ${records.cutoff}; window ${records.from} to ${records.to}; ${records.in_window} of ${records.members} members observed in the window, ${records.outside_window} outside.`;
+    summary.appendChild(head);
+    const table = document.createElement("table");
+    const header = document.createElement("tr");
+    for (const name of ["class", "label", "targets", "verified agree", "verified disagree", "disputed", "unresolved", "none", "precision", "withdrawn / stale / later / training denied", "outcome receipts", "observed"]) {
+      const th = document.createElement("th");
+      th.textContent = name;
+      header.appendChild(th);
+    }
+    table.appendChild(header);
+    for (const row of records.classes || []) {
+      const a = row.adjudication || {};
+      const o = row.outcomes || {};
+      const tr = document.createElement("tr");
+      for (const cell of [
+        row.class.class_id, row.class.abstained ? "(abstained)" : row.class.label, row.targets,
+        a.verified_agree, a.verified_disagree, a.disputed, a.unresolved, a.none,
+        row.precision === null || row.precision === undefined ? "n/a" : row.precision.toFixed(3),
+        `${a.withdrawn} / ${a.stale} / ${a.later} / ${a.training_denied}`, `${o.receipts} (${o.correctness} correctness in basis, ${o.superseded} superseded)`,
+        `${row.first_observed} to ${row.last_observed}`,
+      ]) {
+        const td = document.createElement("td");
+        td.textContent = String(cell);
+        tr.appendChild(td);
+      }
+      table.appendChild(tr);
+    }
+    summary.appendChild(table);
+  }
+
+  function installClassesForm() {
+    const form = $("decision-classes-form");
+    if (!form) return;
+    form.onsubmit = async (event) => {
+      event.preventDefault();
+      const summary = $("decision-classes-summary");
+      if (summary) summary.textContent = "";
+      await run("Class records", async () => {
+        const body = {cohort_id: encodeWireID(required("decision-classes-cohort")), from: utcStamp(required("decision-classes-from"))};
+        const to = $("decision-classes-to") && $("decision-classes-to").value.trim();
+        if (to) body.to = utcStamp(to);
+        const records = await requestJSON("/api/v1/decision-classes", {
+          method: "POST",
+          headers: {"content-type": "application/json"},
+          body: JSON.stringify(body),
+        });
+        renderClassRecords(records);
+        return records;
+      });
+    };
+  }
+
   function installOutcomeForm() {
     const form = $("outcome-read-form");
     if (!form) return;
@@ -195,6 +277,7 @@
   installRegistrationForm();
   installJSONSubmit("registration-submit-form", "Registration submission", "/api/v1/decision-registrations", "registration-key", "registration-json");
   installDatasetForm();
+  installClassesForm();
   installOutcomeForm();
   installJSONSubmit("outcome-submit-form", "Outcome report", "/api/v1/outcomes", "outcome-submit-key", "outcome-json");
   installAdjudicationForm();
