@@ -45,6 +45,7 @@ const MaxGraphTableRequestBytes = 64 << 10
 // GraphTableReader is what the routes need from a described table.
 type GraphTableReader interface {
 	Ontology() graphtable.Ontology
+	Browse(context.Context, graphtable.BrowseRequest) (graphtable.BrowsePage, error)
 	Nodes(context.Context, []string) ([]graphtable.Node, error)
 	Neighborhood(context.Context, graphtable.NeighborhoodRequest) (graphtable.Neighborhood, error)
 	Path(ctx context.Context, from, to string, maxDepth, fanout, maxNodes int) (graphtable.Neighborhood, bool, error)
@@ -139,7 +140,7 @@ func (g *graphTableHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeResponse(w, http.StatusOK, g.describe())
-	case rest == "nodes" || rest == "neighborhood" || rest == "path" || rest == "terms":
+	case rest == "browse" || rest == "nodes" || rest == "neighborhood" || rest == "path" || rest == "terms":
 		if r.Method != http.MethodPost {
 			methodNotAllowed("POST")
 			return
@@ -267,6 +268,20 @@ type graphTableNodesRequest struct {
 	IDs []string `json:"ids"`
 }
 
+type graphTableBrowseRequest struct {
+	Namespace        string `json:"namespace"`
+	Kind             string `json:"kind"`
+	IdentifierPrefix string `json:"identifier_prefix"`
+	After            string `json:"after"`
+	Limit            int    `json:"limit"`
+}
+
+type wireGraphTableBrowse struct {
+	Table string     `json:"table"`
+	Nodes []wireNode `json:"nodes"`
+	Next  string     `json:"next,omitempty"`
+}
+
 type graphTableNeighborhoodRequest struct {
 	NodeIDs       []string `json:"node_ids"`
 	Depth         int      `json:"depth"`
@@ -314,6 +329,20 @@ type wireGraphTableTerms struct {
 func (g *graphTableHTTP) dispatch(ctx context.Context, route string, raw []byte) (any, error) {
 	table := g.surface.Reader.Ontology().Table
 	switch route {
+	case "browse":
+		var req graphTableBrowseRequest
+		if err := decodeGraphTableBody(raw, &req); err != nil {
+			return nil, err
+		}
+		page, err := g.surface.Reader.Browse(ctx, graphtable.BrowseRequest{Namespace: req.Namespace, Kind: req.Kind, IdentifierPrefix: req.IdentifierPrefix, After: req.After, Limit: req.Limit})
+		if err != nil {
+			return nil, err
+		}
+		items := make([]wireNode, 0, len(page.Nodes))
+		for _, node := range page.Nodes {
+			items = append(items, wireNode{ID: node.ID, Kind: node.Kind, Labels: []string{graphTableDisplayName(node), node.Namespace}})
+		}
+		return wireGraphTableBrowse{Table: table, Nodes: items, Next: page.Next}, nil
 	case "nodes":
 		var req graphTableNodesRequest
 		if err := decodeGraphTableBody(raw, &req); err != nil {
@@ -372,10 +401,8 @@ func (g *graphTableHTTP) dispatch(ctx context.Context, route string, raw []byte)
 func wireGraphTableNodeList(nodes []graphtable.Node) []wireNode {
 	out := make([]wireNode, 0, len(nodes))
 	for _, n := range nodes {
-		node := wireNode{ID: n.ID, Kind: n.Kind, Labels: []string{n.Key, n.Namespace}}
-		if n.Key == "" {
-			node.Labels = node.Labels[1:]
-		}
+		label := graphTableDisplayName(n)
+		node := wireNode{ID: n.ID, Kind: n.Kind, Labels: []string{label, n.Namespace}}
 		properties := shoal.Metadata{"found": strconv.FormatBool(n.Found)}
 		for _, a := range n.Attributes {
 			key := a.Family
@@ -388,6 +415,27 @@ func wireGraphTableNodeList(nodes []graphtable.Node) []wireNode {
 		out = append(out, node)
 	}
 	return out
+}
+
+func graphTableDisplayName(n graphtable.Node) string {
+	for _, wanted := range []string{"name", "display_name", "title", "summary", "subject"} {
+		for _, a := range n.Attributes {
+			if strings.EqualFold(a.Field, wanted) && strings.TrimSpace(a.Value) != "" {
+				value := strings.TrimSpace(strings.SplitN(a.Value, "\n", 2)[0])
+				if len([]rune(value)) > 100 {
+					value = string([]rune(value)[:100]) + "…"
+				}
+				return value
+			}
+		}
+	}
+	if n.Identifier != "" {
+		return n.Identifier
+	}
+	if n.Key != "" {
+		return n.Key
+	}
+	return n.Kind
 }
 
 func wireGraphTableEdgeList(edges []graphtable.Edge) []wireEdge {

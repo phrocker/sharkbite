@@ -165,6 +165,44 @@ func edgeKeys(edges []graphtable.Edge) []string {
 	return out
 }
 
+func TestBrowsePagesLiveRecordsByNamespaceAndKind(t *testing.T) {
+	eng := openEngine(t, "graph", tableschema.Table)
+	describe(t, eng, foremanSchema(1))
+	write(t, eng, "graph", foremanCells())
+	r := openReader(t, graphtable.NewEngineStore(eng), "graph")
+	first, err := r.Browse(context.Background(), graphtable.BrowseRequest{Namespace: "entity", Limit: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := nodeIDs(first.Nodes); !reflect.DeepEqual(got, []string{"ent:host|h1", "ent:host|h2"}) || first.Next != "ent:host|h2" {
+		t.Fatalf("first page = %+v", first)
+	}
+	second, err := r.Browse(context.Background(), graphtable.BrowseRequest{Namespace: "entity", Limit: 2, After: first.Next})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := nodeIDs(second.Nodes); !reflect.DeepEqual(got, []string{"ent:service|api"}) || second.Next != "" || second.Nodes[0].Identifier != "api" {
+		t.Fatalf("second page = %+v", second)
+	}
+	filtered, err := r.Browse(context.Background(), graphtable.BrowseRequest{Namespace: "entity", Kind: "service", IdentifierPrefix: "ap", Limit: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := nodeIDs(filtered.Nodes); !reflect.DeepEqual(got, []string{"ent:service|api"}) {
+		t.Fatalf("filtered page = %+v", filtered)
+	}
+	for _, bad := range []graphtable.BrowseRequest{
+		{Namespace: "entity", Limit: 0},
+		{Namespace: "missing", Limit: 2},
+		{Namespace: "entity", IdentifierPrefix: "api", Limit: 2},
+		{Namespace: "entity", Kind: "service", After: "evt:alert|e1", Limit: 2},
+	} {
+		if _, err := r.Browse(context.Background(), bad); !errors.Is(err, graphtable.ErrInvalid) {
+			t.Fatalf("Browse(%+v) error = %v", bad, err)
+		}
+	}
+}
+
 func TestOpenReadsTheNewestDescriptorThroughTheStore(t *testing.T) {
 	eng := openEngine(t, "graph")
 	describe(t, eng, foremanSchema(1))
@@ -549,6 +587,17 @@ func TestShardedReadAgreesWithOneStore(t *testing.T) {
 	tb, err := two.Terms(context.Background(), []string{"host", "api"})
 	if err != nil || !reflect.DeepEqual(ta, tb) {
 		t.Fatalf("sharded terms = %+v, %v; one store %+v", tb, err, ta)
+	}
+	for _, after := range []string{"", "ent:host|h1", "ent:host|h2"} {
+		req := graphtable.BrowseRequest{Namespace: "entity", After: after, Limit: 2}
+		a, err := one.Browse(context.Background(), req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, err := two.Browse(context.Background(), req)
+		if err != nil || !reflect.DeepEqual(a, b) {
+			t.Fatalf("sharded browse after %q = %+v, %v; one store %+v", after, b, err, a)
+		}
 	}
 
 	// Shards must agree on the descriptor.

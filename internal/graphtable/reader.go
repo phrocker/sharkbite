@@ -25,6 +25,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -48,7 +49,9 @@ const (
 	// up to the bound and the expansion reports truncation, so a hub row or
 	// one carrying large embedding cells cannot make a reader materialize
 	// it whole.
-	MaxRowCells = 8192
+	MaxRowCells    = 8192
+	MaxBrowseCells = 4096
+	MaxBrowseRows  = 40
 
 	DefaultDepth       = 1
 	DefaultFanout      = 32
@@ -66,6 +69,8 @@ type Node struct {
 	// Key is the row key after the namespace prefix: what names the node
 	// within its namespace.
 	Key string `json:"key"`
+	// Identifier is the part of Key other than its kind component.
+	Identifier string `json:"identifier"`
 	// Namespace is the NodeSchema the row belongs to.
 	Namespace string `json:"namespace"`
 	// Kind is cut from the row by the namespace's kind rule, or the
@@ -146,6 +151,20 @@ type OntologyNodeKind struct {
 	Name      string   `json:"name"`
 	RowPrefix string   `json:"row_prefix"`
 	Kinds     []string `json:"kinds,omitempty"`
+	KindSep   string   `json:"kind_sep,omitempty"`
+	KindIndex int32    `json:"kind_index,omitempty"`
+}
+
+// BrowseRequest reads a bounded page of records in one namespace. Kind and
+// IdentifierPrefix narrow the row prefix; After is the previous page cursor.
+type BrowseRequest struct {
+	Namespace, Kind, IdentifierPrefix, After string
+	Limit                                    int
+}
+
+type BrowsePage struct {
+	Nodes []Node `json:"nodes"`
+	Next  string `json:"next,omitempty"`
 }
 
 // OntologyEdge describes one edge family.
@@ -320,7 +339,7 @@ func (r *Reader) Ontology() Ontology {
 		Namespaces: []OntologyNodeKind{}, Edges: []OntologyEdge{},
 	}
 	for _, node := range r.schema.GetNodes() {
-		out.Namespaces = append(out.Namespaces, OntologyNodeKind{Name: node.GetName(), RowPrefix: node.GetRowPrefix(), Kinds: append([]string(nil), node.GetKinds()...)})
+		out.Namespaces = append(out.Namespaces, OntologyNodeKind{Name: node.GetName(), RowPrefix: node.GetRowPrefix(), Kinds: append([]string(nil), node.GetKinds()...), KindSep: node.GetKindSep(), KindIndex: node.GetKindIndex()})
 	}
 	for _, edge := range r.schema.GetEdges() {
 		out.Edges = append(out.Edges, OntologyEdge{
@@ -359,6 +378,122 @@ func (ns namespace) kindOf(row string) string {
 		return ""
 	}
 	return ns.spec.GetName()
+}
+
+func (ns namespace) identifierOf(row string) string {
+	rest := row[len(ns.spec.GetRowPrefix()):]
+	sep := ns.spec.GetKindSep()
+	if sep == "" {
+		return rest
+	}
+	fields := strings.Split(rest, sep)
+	i := int(ns.spec.GetKindIndex())
+	if i < 0 || i >= len(fields) {
+		return rest
+	}
+	return strings.Join(append(fields[:i:i], fields[i+1:]...), sep)
+}
+
+// Browse enumerates live rows without an unbounded table scan. The scan's
+// cell limit also bounds a single unusually wide row; paging always advances
+// beyond the last row returned, even if that row was only partly read.
+func (r *Reader) Browse(ctx context.Context, req BrowseRequest) (BrowsePage, error) {
+	page := BrowsePage{Nodes: []Node{}}
+	if req.Limit <= 0 || req.Limit > MaxBrowseRows {
+		return page, fmt.Errorf("%w: browse limit must be between 1 and %d", ErrInvalid, MaxBrowseRows)
+	}
+	var ns namespace
+	found := false
+	for _, candidate := range r.namespaces {
+		if candidate.spec.GetName() == req.Namespace {
+			ns, found = candidate, true
+			break
+		}
+	}
+	if !found {
+		return page, fmt.Errorf("%w: unknown namespace", ErrInvalid)
+	}
+	if !utf8.ValidString(req.Kind) || !utf8.ValidString(req.IdentifierPrefix) || !utf8.ValidString(req.After) || len(req.Kind) > 128 || len(req.IdentifierPrefix) > MaxRowBytes || len(req.After) > MaxRowBytes {
+		return page, fmt.Errorf("%w: invalid browse filter", ErrInvalid)
+	}
+	prefix := ns.spec.GetRowPrefix()
+	if req.Kind != "" {
+		sep := ns.spec.GetKindSep()
+		if sep == "" || ns.spec.GetKindIndex() != 0 || strings.Contains(req.Kind, sep) || req.Kind == "." || req.Kind == ".." {
+			return page, fmt.Errorf("%w: kind filter unsupported by namespace", ErrInvalid)
+		}
+		if kinds := ns.spec.GetKinds(); len(kinds) > 0 && !slices.Contains(kinds, req.Kind) {
+			return page, fmt.Errorf("%w: unknown kind", ErrInvalid)
+		}
+		prefix += req.Kind + sep
+	}
+	if req.IdentifierPrefix != "" {
+		if req.Kind == "" {
+			return page, fmt.Errorf("%w: identifier prefix requires kind", ErrInvalid)
+		}
+		prefix += req.IdentifierPrefix
+	}
+	if len(prefix) > MaxRowBytes {
+		return page, fmt.Errorf("%w: browse prefix too long", ErrInvalid)
+	}
+	scan := &embedpb.ScanRequest{Table: r.Table(), Limit: MaxBrowseCells}
+	if req.After == "" {
+		scan.RowPrefix = prefix
+	} else {
+		if !strings.HasPrefix(req.After, prefix) {
+			return page, fmt.Errorf("%w: cursor outside browse range", ErrInvalid)
+		}
+		scan.StartRow, scan.StartInclusive = []byte(req.After), false
+		scan.EndRow = prefixEnd([]byte(prefix))
+	}
+	cells, err := r.store.Scan(ctx, scan)
+	if err != nil {
+		return page, err
+	}
+	var current string
+	var rowCells []*embedpb.Cell
+	finish := func() {
+		if current == "" {
+			return
+		}
+		node, _, _ := r.parseRow(current, rowCells, nil)
+		page.Nodes = append(page.Nodes, node)
+	}
+	for _, cell := range cells {
+		row := string(cell.GetRow())
+		if !strings.HasPrefix(row, prefix) || !utf8.ValidString(row) || len(row) > MaxRowBytes {
+			continue
+		}
+		if row != current {
+			finish()
+			if len(page.Nodes) > req.Limit {
+				break
+			}
+			current, rowCells = row, nil
+		}
+		rowCells = append(rowCells, cell)
+	}
+	if len(page.Nodes) <= req.Limit {
+		finish()
+	}
+	if len(page.Nodes) > req.Limit {
+		page.Nodes = page.Nodes[:req.Limit]
+		page.Next = page.Nodes[len(page.Nodes)-1].ID
+	} else if len(cells) == MaxBrowseCells && len(page.Nodes) > 0 {
+		page.Next = page.Nodes[len(page.Nodes)-1].ID
+	}
+	return page, nil
+}
+
+func prefixEnd(prefix []byte) []byte {
+	end := append([]byte(nil), prefix...)
+	for i := len(end) - 1; i >= 0; i-- {
+		if end[i] != 0xff {
+			end[i]++
+			return end[:i+1]
+		}
+	}
+	return nil
 }
 
 // validateRow refuses a row the descriptor does not place in a namespace.
@@ -691,7 +826,7 @@ func (r *Reader) parseRow(id string, cells []*embedpb.Cell, filter *edgeFilter) 
 		cells, stats.oversized = cells[:MaxRowCells], true
 	}
 	ns, _ := r.namespaceOf(id)
-	node := Node{ID: id, Key: id[len(ns.spec.GetRowPrefix()):], Namespace: ns.spec.GetName(), Kind: ns.kindOf(id), Found: len(cells) > 0}
+	node := Node{ID: id, Key: id[len(ns.spec.GetRowPrefix()):], Identifier: ns.identifierOf(id), Namespace: ns.spec.GetName(), Kind: ns.kindOf(id), Found: len(cells) > 0}
 	var edges []Edge
 	attributeCFs := map[string]bool{}
 	for _, cf := range ns.spec.GetAttributeCfs() {

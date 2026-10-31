@@ -115,8 +115,11 @@ func TestStaticWorkspaceMountsGraphTableSource(t *testing.T) {
 	for _, id := range []string{
 		`id="graph-table"`,
 		`id="graph-table-active"`,
-		`id="graph-table-seed"`,
-		`id="graph-table-load"`,
+		`id="graph-table-namespace"`,
+		`id="graph-table-kind"`,
+		`id="graph-table-identifier"`,
+		`id="graph-table-results"`,
+		`id="graph-table-link"`,
 		`id="graph-table-term"`,
 		`id="graph-table-find"`,
 		`id="graph-table-depth"`,
@@ -130,7 +133,7 @@ func TestStaticWorkspaceMountsGraphTableSource(t *testing.T) {
 	script := readStaticAsset(t, "static/graph-table.js")
 	for _, required := range []string{
 		`/api/v1/graph-table`,
-		`"neighborhood"`, `"path"`, `"nodes"`, `"terms"`,
+		`"neighborhood"`, `"path"`, `"nodes"`, `"terms"`, `"browse"`,
 		`capability("graph_table")`,
 		`section.hidden = true`,
 	} {
@@ -140,6 +143,9 @@ func TestStaticWorkspaceMountsGraphTableSource(t *testing.T) {
 	}
 	if strings.Contains(script, `not among your grants`) {
 		t.Fatal("graph table UI must not reveal a concealed mount")
+	}
+	if strings.Contains(index, `row key`) || strings.Contains(index, `Node row key`) {
+		t.Fatal("graph table controls must not ask for storage keys")
 	}
 	app := readStaticAsset(t, "static/app.js")
 	for _, required := range []string{`graphTable.active()`, `graphTable.expand(ids)`, `graphTable.path(`, `graphTable.apply()`, `graph_table: false`} {

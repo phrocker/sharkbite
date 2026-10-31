@@ -44,6 +44,14 @@ func (s *graphTableStub) Ontology() graphtable.Ontology {
 		Edges:      []graphtable.OntologyEdge{{Name: "edge", ColumnFamily: "edge", Relationships: []string{"owns"}}}}
 }
 
+func (s *graphTableStub) Browse(_ context.Context, req graphtable.BrowseRequest) (graphtable.BrowsePage, error) {
+	s.last = "browse"
+	if s.invalid {
+		return graphtable.BrowsePage{}, graphtable.ErrInvalid
+	}
+	return graphtable.BrowsePage{Nodes: []graphtable.Node{{ID: "ent:service|api", Key: "service|api", Identifier: "api", Namespace: "entity", Kind: "service", Found: true, Attributes: []graphtable.Attribute{{Family: "service", Field: "name", Value: "API service"}}}}}, nil
+}
+
 func (s *graphTableStub) Nodes(_ context.Context, ids []string) ([]graphtable.Node, error) {
 	s.last, s.seeds = "nodes", ids
 	return []graphtable.Node{{ID: ids[0], Key: "service|api", Namespace: "entity", Kind: "service", Found: true, Attributes: []graphtable.Attribute{{Family: "service", Field: "name", Value: "api"}}}}, nil
@@ -167,6 +175,7 @@ func TestGraphTableRoutesServeTheDescribedTable(t *testing.T) {
 	}
 
 	for _, row := range []struct{ path, body, last string }{
+		{"/api/v1/graph-table/browse", `{"namespace":"entity","kind":"service","limit":24}`, "browse"},
 		{"/api/v1/graph-table/nodes", `{"ids":["ent:service|api"]}`, "nodes"},
 		{"/api/v1/graph-table/path", `{"from":"ent:service|api","to":"ent:host|h1","max_depth":3}`, "path"},
 		{"/api/v1/graph-table/terms", `{"terms":["api"]}`, "terms"},
@@ -179,6 +188,11 @@ func TestGraphTableRoutesServeTheDescribedTable(t *testing.T) {
 	}
 	if stub.depth != 3 {
 		t.Fatalf("path max_depth not passed: %d", stub.depth)
+	}
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, graphTableRequest(http.MethodPost, "/api/v1/graph-table/browse", `{"namespace":"entity","kind":"service","limit":24}`))
+	if w.Code != http.StatusOK || !strings.Contains(w.Body.String(), "API service") || strings.Contains(w.Body.String(), `"labels":["service|api"`) {
+		t.Fatalf("browse display = %d %s", w.Code, w.Body)
 	}
 
 	// Capability advertised.
@@ -250,11 +264,11 @@ func TestGraphTableRoutesRefuseWhatTheyShould(t *testing.T) {
 	// A decision without the label's policy is told nothing is mounted,
 	// including in the metadata capability list.
 	noLabel, _ := graphTableFixture(t, []auth.Operation{auth.OperationRead, auth.OperationNeighborhood}, [][]byte{[]byte("policy")})
-	for _, path := range []string{"/api/v1/graph-table/", "/api/v1/graph-table/neighborhood"} {
+	for _, path := range []string{"/api/v1/graph-table/", "/api/v1/graph-table/neighborhood", "/api/v1/graph-table/browse"} {
 		w = httptest.NewRecorder()
 		method, body := http.MethodGet, ""
-		if strings.HasSuffix(path, "neighborhood") {
-			method, body = http.MethodPost, `{"node_ids":["a"]}`
+		if strings.HasSuffix(path, "neighborhood") || strings.HasSuffix(path, "browse") {
+			method, body = http.MethodPost, `{"namespace":"entity","limit":24}`
 		}
 		noLabel.ServeHTTP(w, graphTableRequest(method, path, body))
 		if w.Code != http.StatusNotFound {

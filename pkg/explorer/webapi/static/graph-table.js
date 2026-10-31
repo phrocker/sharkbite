@@ -1,9 +1,8 @@
 // graph-table.js: the Graph panel's described-table source. When the host
 // mounts /api/v1/graph-table (a graph laid out in any engine table and read
 // through its recorded descriptor), this adds a toolbar to the Graph panel:
-// a switch that makes expansion and path finding read the table instead of
-// the workspace graph, a seed loader by row key, a term lookup over the
-// table's postings, and the table's ontology. Results render on the same
+// a live record picker, a term lookup over the table's postings, and the
+// table's ontology. Results render on the same
 // canvas and lists as the workspace graph. Loaded after app.js and relies on
 // its state, $, authHeaders, apiError, mergeGraph, draw, activate,
 // selectNode, setGraphSource, decodedNodeProperties, graphGeneration and capability.
@@ -11,6 +10,9 @@ const graphTable = (() => {
   const ROOT = "/api/v1/graph-table";
   let description = null;
   let generation = 0;
+  let browseGeneration = 0;
+  let next = "";
+  let browsedFilter = null;
 
   function el(id) {
     return document.getElementById(id);
@@ -98,12 +100,26 @@ const graphTable = (() => {
       section.hidden = false;
       // A table-only Explorer should open on its actual graph source.
       if (!capability("neighborhood")) setGraphSource("table");
-      el("graph-table-summary").textContent =
-        `Table ${value.table} (${value.schema_id}@${value.version}) under label ${value.label}, ` +
-        `read from ${describeStores(value.stores)}. Edges are followed outward only.`;
+      el("graph-table-source-option").hidden = !capability("neighborhood");
+      el("graph-table-term-controls").hidden = !(value.ontology.postings || []).length;
+      el("graph-table-summary").textContent = "Choose a record to see its connections in the live graph.";
       el("graph-table-depth").max = String(value.bounds.max_depth);
       renderOntology(value.ontology);
-      status("Load a node by row key to see its first hop, or find one by term.");
+      const spaces = el("graph-table-namespace");
+      spaces.replaceChildren();
+      for (const ns of value.ontology.namespaces || []) {
+        const option = document.createElement("option");
+        option.value = ns.name;
+        option.textContent = ns.name;
+        spaces.append(option);
+      }
+      // Foreman has many numbered action rows; start its customer journey
+      // with named projects while leaving every kind available to browse.
+      if (value.schema_id === "foreman.graph") el("graph-table-kind").value = "project";
+      status("Choose a live record to see its first hop.");
+      const linked = linkedRecord();
+      if (linked) await loadId(linked);
+      else await browse();
     } catch (error) {
       if (mine !== generation) return;
       description = null;
@@ -118,6 +134,94 @@ const graphTable = (() => {
         el("graph-table-summary").textContent = "The graph source could not be loaded.";
         status(error.message || String(error), true);
       }
+    }
+  }
+
+  function namespace(name) {
+    return (description?.ontology.namespaces || []).find((item) => item.name === name);
+  }
+
+  function linkedRecord() {
+    const params = new URLSearchParams(window.location.search);
+    const ns = namespace(params.get("graph_namespace"));
+    const kind = params.get("graph_kind");
+    const identifier = params.get("graph_id");
+    if (!ns || !identifier || identifier.length > 4096) return "";
+    if (!ns.kind_sep) return ns.row_prefix + identifier;
+    if ((ns.kind_index || 0) !== 0 || !kind || kind.length > 128 || kind.includes(ns.kind_sep)) return "";
+    return ns.row_prefix + kind + ns.kind_sep + identifier;
+  }
+
+  function select(node) {
+    const link = el("graph-table-link");
+    if (!link) return;
+    link.hidden = true;
+    if (!node || !description) return;
+    const ns = (description.ontology.namespaces || []).find((item) => node.id.startsWith(item.row_prefix));
+    if (!ns) return;
+    const key = node.id.slice(ns.row_prefix.length);
+    let kind = node.kind;
+    let identifier = key;
+    if (ns.kind_sep) {
+      if ((ns.kind_index || 0) !== 0) return;
+      const cut = key.indexOf(ns.kind_sep);
+      if (cut < 1) return;
+      kind = key.slice(0, cut);
+      identifier = key.slice(cut + ns.kind_sep.length);
+    }
+    if (!identifier) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", "graph");
+    url.searchParams.set("graph_namespace", ns.name);
+    url.searchParams.set("graph_kind", kind);
+    url.searchParams.set("graph_id", identifier);
+    link.href = url.toString();
+    link.hidden = false;
+  }
+
+  async function browse(more = false) {
+    if (!description) return;
+    const filter = more ? browsedFilter : {
+      namespace: el("graph-table-namespace").value,
+      kind: el("graph-table-kind").value.trim(),
+      identifier_prefix: el("graph-table-identifier").value.trim(),
+    };
+    if (!filter) return;
+    const kind = filter.kind;
+    const identifierPrefix = filter.identifier_prefix;
+    if (identifierPrefix && !kind) {
+      status("Choose a kind before filtering by identifier.", true);
+      return;
+    }
+    const mine = ++browseGeneration;
+    const after = more ? next : "";
+    if (!more) {
+      next = "";
+      browsedFilter = filter;
+      el("graph-table-results").replaceChildren();
+    }
+    status("Browsing live records…");
+    try {
+      const response = await request("browse", {
+        ...filter, after, limit: 24,
+      });
+      if (mine !== browseGeneration) return;
+      next = response.next || "";
+      el("graph-table-more").hidden = !next;
+      const results = el("graph-table-results");
+      for (const node of response.nodes || []) {
+        const button = document.createElement("button");
+        button.type = "button";
+        const title = (node.labels && node.labels[0]) || node.kind;
+        button.textContent = `${node.kind} · ${title}`;
+        button.setAttribute("aria-label", `Open ${node.kind} ${title}`);
+        button.onclick = () => loadId(node.id);
+        results.append(button);
+      }
+      status(response.nodes.length ? "Select a record to load its first hop." : "No records match this filter.");
+    } catch (error) {
+      if (mine !== browseGeneration) return;
+      status(`Record browse failed: ${error.message || String(error)}`, true);
     }
   }
 
@@ -180,21 +284,21 @@ const graphTable = (() => {
     }
   }
 
-  async function load() {
-    const id = el("graph-table-seed").value.trim();
+  async function loadId(id) {
     if (!id || !description) return;
+    ++browseGeneration;
     el("graph-table-active").checked = true;
     setGraphSource("table");
     const mine = ++generation;
     const graphMine = graphGeneration;
-    status(`Loading ${id}…`);
+    status("Loading record and its connections…");
     try {
       const response = await request("nodes", {ids: [id]});
       if (stale(mine, graphMine)) return;
       const node = response.nodes[0];
       const found = node && decodedNodeProperties(node).found === "true";
       if (!found) {
-        status(`${id} is in the namespace but the table holds no cell for it.`);
+        status("That record is no longer in the live table.");
         return;
       }
       mergeGraph({nodes: response.nodes, edges: []}, "table");
@@ -203,7 +307,7 @@ const graphTable = (() => {
       await expand([id]);
     } catch (error) {
       if (stale(mine, graphMine)) return;
-      status(`Load failed: ${error.message || String(error)}`, true);
+      status(`Record load failed: ${error.message || String(error)}`, true);
     }
   }
 
@@ -236,12 +340,18 @@ const graphTable = (() => {
   }
 
   function bind() {
-    const loadButton = el("graph-table-load");
     const findButton = el("graph-table-find");
-    if (loadButton) loadButton.onclick = load;
     if (findButton) findButton.onclick = find;
-    const seed = el("graph-table-seed");
-    if (seed) seed.onkeydown = (event) => { if (event.key === "Enter") load(); };
+    const form = el("graph-table-browse-form");
+    if (form) form.onsubmit = (event) => { event.preventDefault(); browse(); };
+    const more = el("graph-table-more");
+    if (more) more.onclick = () => browse(true);
+    const space = el("graph-table-namespace");
+    if (space) space.onchange = () => browse();
+    for (const id of ["graph-table-kind", "graph-table-identifier"]) {
+      const input = el(id);
+      if (input) input.oninput = () => { next = ""; el("graph-table-more").hidden = true; };
+    }
     const term = el("graph-table-term");
     if (term) term.onkeydown = (event) => { if (event.key === "Enter") find(); };
     const toggle = el("graph-table-active");
@@ -255,5 +365,5 @@ const graphTable = (() => {
   }
 
   bind();
-  return {active, apply, expand, path, load, find};
+  return {active, apply, expand, path, browse, find, select};
 })();

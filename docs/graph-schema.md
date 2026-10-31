@@ -171,13 +171,21 @@ or `metric`; `id_index`, `rel_index`, or `relationships` without a
 
 `internal/graphtable` reads a described table as a graph, and
 `shoal-explore-web -graph-table <name>` serves it at `/api/v1/graph-table`
-beside the workspace's own graph: nodes by row key, neighborhoods, directed
-paths, and term lookups over the table's postings, plus the descriptor
-projected as the table's ontology (namespaces and their kinds, edge
-families and their relationships, postings, embedding spaces). The Graph
-panel gains a "Described table" toolbar: a switch that makes expansion and
-path finding read the table, a node loader by row key, a term lookup, and
-the hop count; results draw on the same canvas.
+beside the workspace's own graph: bounded record browsing, nodes by row key,
+neighborhoods, directed paths, and term lookups over the table's postings,
+plus the descriptor projected as the table's ontology (namespaces and their
+kinds, edge families and their relationships, postings, embedding spaces).
+The Graph panel has a live record picker. Readers choose a namespace and
+optionally a kind and identifier prefix, then select a named record to load
+its first hop. A link to the selected record uses namespace, kind, and
+identifier in the URL; storage row keys stay out of the visible controls.
+Term lookup, hop count, and source switching remain under Graph options.
+
+`POST /api/v1/graph-table/browse` accepts `namespace`, optional `kind`,
+`identifier_prefix`, `after`, and `limit` (1–40). It returns `nodes` with
+display labels and an optional `next` cursor. The server scans at most 4096
+cells per page; clients pass `next` as `after` for another page. A kind filter
+uses the descriptor's kind separator when the kind is the first key field.
 
 The reader never opens the table. Every read is the `ScanRequest` of
 `proto/embed.proto`, so the rows are served by whichever process hosts

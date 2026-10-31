@@ -63,8 +63,8 @@ input,textarea,select,button{font:inherit;border-color:var(--line);background:#1
 input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 button{font-weight:550;transition:background .15s ease,border-color .15s ease}
 button:hover:not(:disabled){background:#18342f;border-color:rgba(116,228,192,.55)}
-#search-button,#graph-table-load,#graph-table-find{background:var(--accent);border-color:var(--accent);color:#081713}
-#search-button:hover,#graph-table-load:hover,#graph-table-find:hover{background:#b2f5df;color:#081713}
+#search-button,#graph-table-browse,#graph-table-find{background:var(--accent);border-color:var(--accent);color:#081713}
+#search-button:hover,#graph-table-browse:hover,#graph-table-find:hover{background:#b2f5df;color:#081713}
 .doc-card,.result,.chat-response,.provenance-card{background:var(--panel);border-color:var(--line);border-radius:12px}
 .doc-card.selected{background:#12302b;border-color:var(--accent)}
 .evidence-quote,.explanation,.source-details code{background:#102127}
@@ -115,6 +115,22 @@ body.graph-focus #graph{max-width:1400px;margin:0 auto}
 #graph-table .graph-tools{align-items:center;margin-bottom:8px}
 #graph-table-summary{margin:0 0 10px}
 #graph-table-status:empty{display:none}
+#graph .graph-tools select,.graph-record-picker select{background:#15223a;color:var(--text);border:1px solid var(--line);border-radius:7px;padding:8px;min-width:0}
+#graph .graph-tools select{flex:1 1 10rem}
+#graph-table .graph-record-picker{display:grid;grid-template-columns:minmax(7rem,auto) minmax(0,1fr) minmax(5rem,auto) minmax(0,1fr);gap:7px 10px;align-items:center;max-width:none;min-width:0;margin:0 0 11px}
+#graph-table .graph-record-picker label{font-size:12px;color:var(--muted)}
+#graph-table .graph-record-picker input{width:100%;min-width:0}
+#graph-table .graph-record-picker button{grid-column:4}
+.graph-record-results{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0}
+.graph-record-results button{max-width:100%;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.graph-record-link{display:inline-block;margin:4px 0 10px;color:var(--accent)}
+.graph-record-link[hidden]{display:none}
+#graph-table-more{margin:3px 8px 9px 0}
+#graph-table-options{margin-top:9px}
+#graph-table-options .graph-tools{margin-top:10px}
+#graph-table-source-option[hidden],#graph-table-term-controls[hidden]{display:none}
+#graph-table-term-controls{display:flex;gap:7px;flex:1 1 18rem}
+@media(max-width:800px){#graph-table .graph-record-picker{grid-template-columns:minmax(5rem,auto) minmax(0,1fr)}#graph-table .graph-record-picker button{grid-column:2}}
 /* The header badge keeps identity visible while the graph inspector stays in view. */
 body.graph-focus .right .graph-identity{display:none}
 
