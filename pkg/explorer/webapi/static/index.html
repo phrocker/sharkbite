@@ -44,7 +44,15 @@
       <section><h2>Hierarchy</h2><p id="hierarchy-status" class="muted" role="status" aria-live="polite">Select a document.</p><div id="hierarchy" class="tree"></div></section>
     </aside>
     <section class="center">
-      <div class="tabs" role="tablist" aria-label="Explorer views"><button id="tab-chat" class="tab" data-panel="chat" role="tab" aria-controls="chat" aria-selected="false" tabindex="-1" type="button">Chat</button><button id="tab-evidence" class="tab active" data-panel="evidence" role="tab" aria-controls="evidence" aria-selected="true" type="button">Evidence</button><button id="tab-team" class="tab" data-panel="team" role="tab" aria-controls="team" aria-selected="false" tabindex="-1" type="button">Team</button><button id="tab-decisions" class="tab" data-panel="decisions" role="tab" aria-controls="decisions" aria-selected="false" tabindex="-1" type="button">Decisions</button><button id="tab-learning" class="tab" data-panel="learning" role="tab" aria-controls="learning" aria-selected="false" tabindex="-1" type="button">Learning</button><button id="tab-graph" class="tab" data-panel="graph" role="tab" aria-controls="graph" aria-selected="false" tabindex="-1" type="button">Graph</button><button id="tab-ontology" class="tab" data-panel="ontology" role="tab" aria-controls="ontology" aria-selected="false" tabindex="-1" type="button">Ontology</button></div>
+      <div class="tabs" role="tablist" aria-label="Explorer views"><button id="tab-inbox" class="tab" data-panel="inbox" disabled aria-disabled="true" role="tab" aria-controls="inbox" aria-selected="false" tabindex="-1" type="button">Inbox</button><button id="tab-chat" class="tab" data-panel="chat" role="tab" aria-controls="chat" aria-selected="false" tabindex="-1" type="button">Chat</button><button id="tab-evidence" class="tab active" data-panel="evidence" role="tab" aria-controls="evidence" aria-selected="true" type="button">Evidence</button><button id="tab-team" class="tab" data-panel="team" role="tab" aria-controls="team" aria-selected="false" tabindex="-1" type="button">Team</button><button id="tab-decisions" class="tab" data-panel="decisions" role="tab" aria-controls="decisions" aria-selected="false" tabindex="-1" type="button">Decisions</button><button id="tab-learning" class="tab" data-panel="learning" role="tab" aria-controls="learning" aria-selected="false" tabindex="-1" type="button">Learning</button><button id="tab-graph" class="tab" data-panel="graph" role="tab" aria-controls="graph" aria-selected="false" tabindex="-1" type="button">Graph</button><button id="tab-ontology" class="tab" data-panel="ontology" role="tab" aria-controls="ontology" aria-selected="false" tabindex="-1" type="button">Ontology</button></div>
+      <div id="inbox" class="panel inbox-panel" role="tabpanel" aria-labelledby="tab-inbox">
+        <div class="panel-intro"><span class="graph-eyebrow">OPERATOR WORK</span><h1>Inbox</h1><p>Review pending fleet approvals in the current workspace.</p></div>
+        <div class="inbox-toolbar"><button id="inbox-refresh" type="button">Refresh approvals</button><span id="inbox-status" class="muted" role="status" aria-live="polite">Open the inbox to load pending approvals.</span></div>
+        <div class="inbox-layout">
+          <section aria-labelledby="inbox-list-heading"><h2 id="inbox-list-heading">Pending approvals</h2><div id="inbox-list" class="inbox-list"></div><button id="inbox-more" type="button" hidden>More approvals</button></section>
+          <section id="inbox-detail" aria-labelledby="inbox-detail-heading"><h2 id="inbox-detail-heading">Review</h2><p class="muted">Choose an approval to inspect its current status.</p></section>
+        </div>
+      </div>
       <div id="chat" class="panel" role="tabpanel" aria-labelledby="tab-chat">
         <div class="panel-intro"><span class="graph-eyebrow">GOVERNED ANSWERS</span><h1>Ask the workspace</h1><p>Answers use authorized evidence and are recorded after verification.</p></div>
         <form id="chat-form" class="stack">
@@ -453,6 +461,7 @@
   <script src="/assets/workspace-settings.js"></script>
   <script src="/assets/app.js"></script>
   <script src="/assets/team-overview.js"></script>
+  <script src="/assets/inbox.js"></script>
   <script src="/assets/decision-console.js"></script>
   <script src="/assets/learning-console.js"></script>
   <script src="/assets/graph-table.js"></script>

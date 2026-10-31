@@ -38,6 +38,7 @@ const state = {
     decision_adjudications: false,
     decision_learning: false,
     graph_table: false,
+    fleet_approvals: false,
   },
   uploadLimits: {
     max_upload_files: 0,
@@ -1923,6 +1924,7 @@ function applyCapabilities() {
   });
   applyDecisionCapability();
   applyLearningCapability();
+  if (typeof inbox !== "undefined") inbox.applyCapability();
 }
 
 function applyLearningCapability() {
@@ -3162,8 +3164,9 @@ installShellDrawers();
 
 function activate(id) {
   if (id === "decisions" && !capability("decisions")) return;
+  if (id === "inbox" && !capability("fleet_approvals")) return;
   setShellDrawer("");
-  document.body.classList.remove("view-chat", "view-evidence", "view-team", "view-decisions", "view-learning", "view-graph", "view-ontology");
+  document.body.classList.remove("view-inbox", "view-chat", "view-evidence", "view-team", "view-decisions", "view-learning", "view-graph", "view-ontology");
   document.body.classList.add(`view-${id}`);
   document.body.classList.toggle("graph-focus", id === "graph");
   document.querySelectorAll(".tab,.panel").forEach((element) => {
@@ -3177,6 +3180,7 @@ function activate(id) {
   document.querySelector(`[data-panel="${id}"]`).classList.add("active");
   $(id).classList.add("active");
   if (id === "graph") draw();
+  if (id === "inbox" && typeof inbox !== "undefined") inbox.open();
 }
 
 function renderGraphList() {
@@ -4205,10 +4209,22 @@ async function bootstrap() {
       renderLoginError(error);
     }
   }
-  loadIdentity();
+  const identityReady = loadIdentity();
   loadOntology();
-  loadMeta()
+  const metadataReady = loadMeta();
+  metadataReady
     .then(() => loadDocuments())
     .catch((error) => showError($("documents"), error));
+  Promise.all([identityReady, metadataReady])
+    .then(() => {
+      const requestedView = new URLSearchParams(window.location.search).get("view");
+      if (capability("fleet_approvals") &&
+          (requestedView === "inbox" ||
+           (!requestedView && state.identity &&
+            (state.identity.operations || []).includes("action_approve")))) {
+        activate("inbox");
+      }
+    })
+    .catch(() => {});
 }
 bootstrap();

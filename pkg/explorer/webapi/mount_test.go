@@ -81,6 +81,19 @@ func TestMountAuthenticatedAllowsNormalizedSubtree(t *testing.T) {
 	}
 }
 
+func TestFleetApprovalCapabilityOnlyAfterAuthenticatedMount(t *testing.T) {
+	handler := authenticatedTestHandler(t, &stubWorkspaceService{}, auth.OperationRead)
+	if handler.decisionCapabilities.FleetApprovals {
+		t.Fatal("approval capability advertised before mount")
+	}
+	if err := handler.MountAuthenticated(FleetApprovalRoutePrefix, &mountedTestHandler{}); err != nil {
+		t.Fatal(err)
+	}
+	if !mergeDecisionCapabilities(AllCapabilities(), handler.decisionCapabilities).FleetApprovals {
+		t.Fatal("authenticated approval mount did not advertise its capability")
+	}
+}
+
 func TestMountAuthenticatedConflictIsAtomic(t *testing.T) {
 	handler := authenticatedTestHandler(
 		t, &stubWorkspaceService{}, auth.OperationRead)

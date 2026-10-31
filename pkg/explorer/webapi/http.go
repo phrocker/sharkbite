@@ -340,6 +340,7 @@ func mergeDecisionCapabilities(base, mounted Capabilities) Capabilities {
 	base.Adjudications = mounted.Adjudications
 	base.Learning = mounted.Learning
 	base.GraphTable = mounted.GraphTable
+	base.FleetApprovals = mounted.FleetApprovals
 	return base
 }
 

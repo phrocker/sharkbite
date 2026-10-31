@@ -73,6 +73,9 @@ func (h *Handler) MountAuthenticated(
 	h.mux.Handle("GET "+pattern, handler)
 	h.mux.Handle("DELETE "+pattern, handler)
 	h.authenticatedMounts[pattern] = handler
+	if pattern == FleetApprovalRoutePrefix {
+		h.decisionCapabilities.FleetApprovals = true
+	}
 	if validator, ok := handler.(preAuthenticationValidator); ok {
 		h.preAuth[pattern] = validator
 	}

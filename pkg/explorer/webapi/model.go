@@ -61,24 +61,25 @@ const (
 type Capability string
 
 const (
-	CapabilityDocuments     Capability = "documents"
-	CapabilityDocument      Capability = "document"
-	CapabilityRetrieve      Capability = "retrieve"
-	CapabilityVector        Capability = "vector_retrieval"
-	CapabilityNeighborhood  Capability = "neighborhood"
-	CapabilityPath          Capability = "path"
-	CapabilityIngest        Capability = "ingest"
-	CapabilityExtraction    Capability = "extraction"
-	CapabilityChanges       Capability = "changes"
-	CapabilityAnalytics     Capability = "analytics"
-	CapabilityDecisions     Capability = "decisions"
-	CapabilityRegistrations Capability = "decision_registrations"
-	CapabilityDatasets      Capability = "decision_datasets"
-	CapabilityOutcomes      Capability = "decision_outcomes"
-	CapabilityClasses       Capability = "decision_classes"
-	CapabilityAdjudications Capability = "decision_adjudications"
-	CapabilityLearning      Capability = "decision_learning"
-	CapabilityGraphTable    Capability = "graph_table"
+	CapabilityDocuments      Capability = "documents"
+	CapabilityDocument       Capability = "document"
+	CapabilityRetrieve       Capability = "retrieve"
+	CapabilityVector         Capability = "vector_retrieval"
+	CapabilityNeighborhood   Capability = "neighborhood"
+	CapabilityPath           Capability = "path"
+	CapabilityIngest         Capability = "ingest"
+	CapabilityExtraction     Capability = "extraction"
+	CapabilityChanges        Capability = "changes"
+	CapabilityAnalytics      Capability = "analytics"
+	CapabilityDecisions      Capability = "decisions"
+	CapabilityRegistrations  Capability = "decision_registrations"
+	CapabilityDatasets       Capability = "decision_datasets"
+	CapabilityOutcomes       Capability = "decision_outcomes"
+	CapabilityClasses        Capability = "decision_classes"
+	CapabilityAdjudications  Capability = "decision_adjudications"
+	CapabilityLearning       Capability = "decision_learning"
+	CapabilityGraphTable     Capability = "graph_table"
+	CapabilityFleetApprovals Capability = "fleet_approvals"
 )
 
 // Capabilities advertises only stable logical features supported by a backend.
@@ -106,6 +107,9 @@ type Capabilities struct {
 	// GraphTable reports a described engine table visible to this decision
 	// at GraphTableRoute, read through its recorded descriptor.
 	GraphTable bool `json:"graph_table"`
+	// FleetApprovals is advertised only when the authenticated approval
+	// surface is mounted by the host.
+	FleetApprovals bool `json:"fleet_approvals"`
 }
 
 // AllCapabilities returns the complete feature set implemented by the embedded
@@ -157,6 +161,8 @@ func (c Capabilities) Supports(capability Capability) bool {
 		return c.Learning
 	case CapabilityGraphTable:
 		return c.GraphTable
+	case CapabilityFleetApprovals:
+		return c.FleetApprovals
 	default:
 		return false
 	}
