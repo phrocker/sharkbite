@@ -1899,7 +1899,7 @@ function applyCapabilities() {
   $("path-from").hidden = !canPath && !canGraphTable;
   $("path-to").hidden = !canPath && !canGraphTable;
   $("find-path").hidden = !canPath && !canGraphTable;
-  $("find-path").disabled = !canPath && !canGraphTable;
+  updatePathButton();
   const graphStatus = $("graph-status");
   if (!canNeighborhood && !canPath && !canGraphTable) {
     graphStatus.dataset.capabilityPlaceholder = "graph";
@@ -2976,11 +2976,12 @@ function setGraphSource(source) {
   $("path-from").value = "";
   $("path-to").value = "";
   $("graph-status").textContent = source === "table"
-    ? "Load a table node or find one by term."
+    ? "Choose a live record to explore its connections."
     : "Select a workspace graph node.";
   $("selection").className = "muted";
   setMessage($("selection"), "Select evidence, a hierarchy section, or a graph node.");
   renderGraphList();
+  if (typeof graphTable !== "undefined") graphTable.select(null);
   draw();
 }
 
@@ -3190,7 +3191,7 @@ function renderGraphList() {
       button.type = "button";
       button.textContent = nodeName(node, node.id);
       button.title = button.textContent;
-      button.setAttribute("aria-label", `${button.textContent}, node ${node.id}`);
+      button.setAttribute("aria-label", `${button.textContent}, graph node`);
       button.setAttribute("aria-pressed", String(node.id === state.selected));
       button.onclick = () => selectNode(node.id);
       nodesElement.append(button);
@@ -3216,14 +3217,37 @@ function renderGraphList() {
       button.setAttribute("aria-pressed", String(edge.id === state.selectedEdge));
       button.setAttribute(
         "aria-label",
-        `${derived ? "Derived edge, " : ""}${nodeName(from, edge.from)} ${edge.from} ` +
-          `to ${nodeName(to, edge.to)} ${edge.to}, ${edge.type}`,
+        `${derived ? "Derived edge, " : ""}${nodeName(from, edge.from)} ` +
+          `to ${nodeName(to, edge.to)}, ${edge.type}`,
       );
       button.onclick = () => selectEdge(edge.id);
       item.append(button);
       edgesElement.append(item);
     }
   }
+  for (const id of ["path-from", "path-to"]) {
+    const select = $(id);
+    const previous = select.value;
+    select.replaceChildren();
+    const prompt = document.createElement("option");
+    prompt.value = "";
+    prompt.textContent = id === "path-from" ? "From a visible record" : "To a visible record";
+    select.append(prompt);
+    for (const node of state.nodes.values()) {
+      const option = document.createElement("option");
+      option.value = node.id;
+      option.textContent = nodeName(node, node.id);
+      select.append(option);
+    }
+    select.value = state.nodes.has(previous) ? previous : "";
+    select.onchange = updatePathButton;
+  }
+  updatePathButton();
+}
+
+function updatePathButton() {
+  $("find-path").disabled = !(capability("path") || (typeof graphTable !== "undefined" && graphTable.active())) ||
+    !$("path-from").value || !$("path-to").value;
 }
 
 function nodeName(node, fallback) {
@@ -3241,16 +3265,19 @@ function selectNode(id) {
     const properties = Object.entries(decodedNodeProperties(node))
       .filter(([key]) => key !== "found" && key !== "node/kind");
     showSelection([
-      ["Node", id],
+      [graphSource === "table" ? "Record" : "Node", graphSource === "table" ? nodeName(node, id) : id],
       ["Kind", node.kind],
-      ["Labels", (node.labels || []).join(", ")],
+      [graphSource === "table" ? "Space" : "Labels", graphSource === "table" ? (node.labels || [])[1] || "" : (node.labels || []).join(", ")],
       ...properties.slice(0, 24),
       ...(properties.length > 24 ? [["More", `${properties.length - 24} additional properties`]] : []),
     ]);
     $("path-from").value = id;
+    updatePathButton();
+    if (typeof graphTable !== "undefined") graphTable.select(graphSource === "table" ? node : null);
   } else {
     $("selection").className = "muted";
     setMessage($("selection"), "Select evidence, a hierarchy section, or a graph node.");
+    if (typeof graphTable !== "undefined") graphTable.select(null);
   }
 
   renderGraphList();
@@ -3268,6 +3295,7 @@ function selectEdge(id) {
   }
   state.selectedEdge = id;
   state.selected = null;
+  if (typeof graphTable !== "undefined") graphTable.select(null);
   $("expand").disabled = true;
   updateContinueButton();
   renderDerivationInspector(edge);

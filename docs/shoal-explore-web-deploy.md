@@ -339,8 +339,8 @@ ingest (`authorized.Client.Ingest`) or is already in the corpus.
 
 A table any consumer wrote into a shoal store, described by a recorded
 `shoal.schema.v1.TableSchema` descriptor (`shoal-embed schema put`), is
-served at `/api/v1/graph-table` and in the Graph panel's "Described table"
-toolbar with:
+served at `/api/v1/graph-table` and in the Graph panel's live record picker
+with:
 
 ```
 shoal-explore-web -dev-auth -state-dir /srv/shoal \

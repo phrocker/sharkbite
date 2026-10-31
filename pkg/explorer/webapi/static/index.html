@@ -325,28 +325,41 @@
         <div class="graph-tools">
           <button id="expand" type="button" disabled>Expand selected</button>
           <button id="continue-expansion" type="button" hidden>More neighbors</button>
-          <label class="sr-only" for="path-from">Path source node ID</label>
-          <input id="path-from" placeholder="Path from node ID">
-          <label class="sr-only" for="path-to">Path target node ID</label>
-          <input id="path-to" placeholder="Path to node ID">
-          <button id="find-path" type="button">Find path</button>
+          <label class="sr-only" for="path-from">Path source record</label>
+          <select id="path-from" aria-label="Path source record"><option value="">From a visible record</option></select>
+          <label class="sr-only" for="path-to">Path target record</label>
+          <select id="path-to" aria-label="Path target record"><option value="">To a visible record</option></select>
+          <button id="find-path" type="button" disabled>Find path</button>
         </div>
         <section id="graph-table" class="graph-table" hidden aria-labelledby="graph-table-heading">
-          <h3 id="graph-table-heading">Described table</h3>
+          <h3 id="graph-table-heading">Live records</h3>
           <p id="graph-table-summary" class="muted">No described table is mounted.</p>
-          <div class="graph-tools">
-            <label class="mode-option"><input id="graph-table-active" type="checkbox"> Read the graph from the described table</label>
-            <label class="sr-only" for="graph-table-seed">Node row key</label>
-            <input id="graph-table-seed" placeholder="Node row key, e.g. ent:service|api">
-            <button id="graph-table-load" type="button">Load node</button>
+          <form id="graph-table-browse-form" class="graph-record-picker">
+            <label for="graph-table-namespace">Record space</label>
+            <select id="graph-table-namespace"></select>
+            <label for="graph-table-kind">Kind</label>
+            <input id="graph-table-kind" placeholder="Any kind" autocomplete="off">
+            <label for="graph-table-identifier">Identifier starts with</label>
+            <input id="graph-table-identifier" placeholder="Optional; choose a kind first" autocomplete="off">
+            <button id="graph-table-browse" type="submit">Browse records</button>
+          </form>
+          <div id="graph-table-results" class="graph-record-results" aria-live="polite"></div>
+          <button id="graph-table-more" type="button" hidden>More records</button>
+          <a id="graph-table-link" class="graph-record-link" hidden>Open link to selected record</a>
+          <details id="graph-table-options"><summary>Graph options</summary>
+            <div class="graph-tools">
+              <label id="graph-table-source-option" class="mode-option"><input id="graph-table-active" type="checkbox"> Read the live table</label>
+            <span id="graph-table-term-controls">
             <label class="sr-only" for="graph-table-term">Term</label>
             <input id="graph-table-term" placeholder="Term in the table's postings">
             <button id="graph-table-find" type="button">Find by term</button>
+            </span>
             <label class="sr-only" for="graph-table-depth">Hops</label>
             <input id="graph-table-depth" type="number" min="1" max="8" value="1" title="Hops per expansion">
-          </div>
+            </div>
+          </details>
           <p id="graph-table-status" class="muted" aria-live="polite"></p>
-          <details id="graph-table-ontology"><summary>Table ontology</summary><div id="graph-table-ontology-body"></div></details>
+          <details id="graph-table-ontology"><summary>Table details</summary><div id="graph-table-ontology-body"></div></details>
         </section>
         <p id="graph-status" class="muted" aria-live="polite">No graph expansion yet.</p>
         <div class="graph-stage">
