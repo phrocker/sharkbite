@@ -133,6 +133,14 @@ func (s *graphTableStub) Terms(_ context.Context, terms []string) ([]graphtable.
 	return []graphtable.TermHit{{Term: terms[0], NodeIDs: []string{"ent:service|api"}}}, nil
 }
 
+func (s *graphTableStub) Vector(_ context.Context, req graphtable.VectorRequest) ([]graphtable.VectorHit, error) {
+	s.last = "vector"
+	if req.Family != "semantic" || req.TopK != 2 || len(req.Query) != 8 {
+		return nil, graphtable.ErrInvalid
+	}
+	return []graphtable.VectorHit{{NodeID: "ent:service|api", Score: 1}}, nil
+}
+
 func graphTableFixture(t *testing.T, operations []auth.Operation, policies [][]byte) (*Handler, *graphTableStub) {
 	return graphTableFixtureCV(t, operations, policies, false)
 }
@@ -237,12 +245,21 @@ func TestGraphTableRoutesServeTheDescribedTable(t *testing.T) {
 		{"/api/v1/graph-table/nodes", `{"ids":["ent:service|api"]}`, "nodes"},
 		{"/api/v1/graph-table/path", `{"from":"ent:service|api","to":"ent:host|h1","max_depth":3}`, "path"},
 		{"/api/v1/graph-table/terms", `{"terms":["api"]}`, "terms"},
+		{"/api/v1/graph-table/vector", `{"family":"semantic","query_b64":"AACAPwAAAAA=","top_k":2}`, "vector"},
 	} {
 		w = httptest.NewRecorder()
 		h.ServeHTTP(w, graphTableRequest(http.MethodPost, row.path, row.body))
 		if w.Code != http.StatusOK || stub.last != row.last {
 			t.Fatalf("%s = %d %s (stub %s)", row.path, w.Code, w.Body, stub.last)
 		}
+	}
+	if !strings.Contains(w.Body.String(), `"node_id":"ent:service|api"`) || !strings.Contains(w.Body.String(), `"score":1`) {
+		t.Fatalf("vector response = %s", w.Body)
+	}
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, graphTableRequest(http.MethodPost, "/api/v1/graph-table/vector", `{"family":"semantic","query_b64":"bad","top_k":2}`))
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("invalid vector query = %d %s", w.Code, w.Body)
 	}
 	if stub.depth != 3 {
 		t.Fatalf("path max_depth not passed: %d", stub.depth)

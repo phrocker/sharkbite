@@ -56,6 +56,7 @@ type GraphTableReader interface {
 	Neighborhood(context.Context, graphtable.NeighborhoodRequest) (graphtable.Neighborhood, error)
 	Path(ctx context.Context, from, to string, maxDepth, fanout, maxNodes int) (graphtable.Neighborhood, bool, error)
 	Terms(context.Context, []string) ([]graphtable.TermHit, error)
+	Vector(context.Context, graphtable.VectorRequest) ([]graphtable.VectorHit, error)
 }
 
 // GraphTableStore describes one process the table's rows are read from.
@@ -194,7 +195,7 @@ func (g *graphTableHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeResponse(w, http.StatusOK, g.describe())
-	case rest == "browse" || rest == "nodes" || rest == "neighborhood" || rest == "path" || rest == "terms":
+	case rest == "browse" || rest == "nodes" || rest == "neighborhood" || rest == "path" || rest == "terms" || rest == "vector":
 		if r.Method != http.MethodPost {
 			methodNotAllowed("POST")
 			return
@@ -331,11 +332,12 @@ type GraphTableDescription struct {
 
 // GraphTableBounds are the request limits the reader enforces.
 type GraphTableBounds struct {
-	MaxDepth  int `json:"max_depth"`
-	MaxFanout int `json:"max_fanout"`
-	MaxNodes  int `json:"max_nodes"`
-	MaxSeeds  int `json:"max_seeds"`
-	MaxTerms  int `json:"max_terms"`
+	MaxDepth            int `json:"max_depth"`
+	MaxFanout           int `json:"max_fanout"`
+	MaxNodes            int `json:"max_nodes"`
+	MaxSeeds            int `json:"max_seeds"`
+	MaxTerms            int `json:"max_terms"`
+	MaxVectorQueryBytes int `json:"max_vector_query_bytes"`
 }
 
 func (g *graphTableHTTP) describe() GraphTableDescription {
@@ -347,7 +349,7 @@ func (g *graphTableHTTP) describe() GraphTableDescription {
 	return GraphTableDescription{
 		Table: ontology.Table, SchemaID: ontology.SchemaID, Version: ontology.Version,
 		Label: g.surface.Label, Stores: stores, Ontology: ontology,
-		Bounds: GraphTableBounds{MaxDepth: graphtable.MaxDepth, MaxFanout: graphtable.MaxFanout, MaxNodes: graphtable.MaxNodes, MaxSeeds: graphtable.MaxSeeds, MaxTerms: graphtable.MaxTerms},
+		Bounds: GraphTableBounds{MaxDepth: graphtable.MaxDepth, MaxFanout: graphtable.MaxFanout, MaxNodes: graphtable.MaxNodes, MaxSeeds: graphtable.MaxSeeds, MaxTerms: graphtable.MaxTerms, MaxVectorQueryBytes: graphtable.MaxVectorQueryBytes},
 	}
 }
 
@@ -390,6 +392,12 @@ type graphTableTermsRequest struct {
 	Terms []string `json:"terms"`
 }
 
+type graphTableVectorRequest struct {
+	Family   string `json:"family"`
+	QueryB64 string `json:"query_b64"`
+	TopK     int    `json:"top_k"`
+}
+
 type wireGraphTableNeighborhood struct {
 	Table        string           `json:"table"`
 	Neighborhood wireNeighborhood `json:"neighborhood"`
@@ -411,6 +419,11 @@ type wireGraphTableNodes struct {
 type wireGraphTableTerms struct {
 	Table string               `json:"table"`
 	Hits  []graphtable.TermHit `json:"hits"`
+}
+
+type wireGraphTableVector struct {
+	Table string                 `json:"table"`
+	Hits  []graphtable.VectorHit `json:"hits"`
 }
 
 func (g *graphTableHTTP) dispatch(ctx context.Context, route string, raw []byte) (any, error) {
@@ -484,6 +497,20 @@ func (g *graphTableHTTP) dispatch(ctx context.Context, route string, raw []byte)
 			hits = []graphtable.TermHit{}
 		}
 		return wireGraphTableTerms{Table: table, Hits: hits}, nil
+	case "vector":
+		var req graphTableVectorRequest
+		if err := decodeGraphTableBody(raw, &req); err != nil {
+			return nil, err
+		}
+		query, err := base64.StdEncoding.Strict().DecodeString(req.QueryB64)
+		if err != nil {
+			return nil, graphtable.ErrInvalid
+		}
+		hits, err := g.surface.Reader.Vector(ctx, graphtable.VectorRequest{Family: req.Family, Query: query, TopK: req.TopK})
+		if err != nil {
+			return nil, err
+		}
+		return wireGraphTableVector{Table: table, Hits: hits}, nil
 	}
 	return nil, shoal.NewError(shoal.ErrorNotFound, "no such graph table route")
 }

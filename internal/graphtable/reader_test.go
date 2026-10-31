@@ -19,8 +19,10 @@ package graphtable_test
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
+	"math"
 	"net"
 	"reflect"
 	"sort"
@@ -35,6 +37,7 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 
 	"github.com/phrocker/shoal-oss/internal/cclient"
+	"github.com/phrocker/shoal-oss/internal/embeddingspace"
 	"github.com/phrocker/shoal-oss/internal/embedpb"
 	"github.com/phrocker/shoal-oss/internal/embedstore"
 	"github.com/phrocker/shoal-oss/internal/engine"
@@ -108,6 +111,101 @@ func foremanSchema(version int32) *schemapb.TableSchema {
 }
 
 func edgeCQ(rel, target string) string { return rel + "\x00" + target }
+
+func packedVector(values ...float32) []byte {
+	out := make([]byte, len(values)*4)
+	for i, value := range values {
+		binary.BigEndian.PutUint32(out[i*4:], math.Float32bits(value))
+	}
+	return out
+}
+
+func TestVectorSearchMergesShardTopKWithoutPartialRanking(t *testing.T) {
+	schema := foremanSchema(1)
+	schema.Vectors = []*schemapb.VectorSchema{{Name: "semantic", EmbeddingCf: "vec", EmbeddingSpace: "space-a", Metric: "cosine"}}
+	cells := []cell{
+		{"ent:host|a", "vec", "embedding", packedVector(1, 0)},
+		{"ent:host|b", "vec", "embedding", packedVector(0, 1)},
+		{"ent:host|m", "vec", "embedding", packedVector(0.8, 0.2)},
+		{"ent:host|z", "vec", "embedding", packedVector(-1, 0)},
+	}
+	makeStore := func(records []cell) *engine.Engine {
+		t.Helper()
+		eng := openEngine(t, "graph")
+		if err := eng.SetTableDefaultEmbedding("graph", embeddingspace.Has("space-a")); err != nil {
+			t.Fatal(err)
+		}
+		describe(t, eng, schema)
+		write(t, eng, "graph", records)
+		if err := eng.Flush("graph"); err != nil {
+			t.Fatal(err)
+		}
+		return eng
+	}
+	whole := makeStore(cells)
+	low := makeStore(cells[:2])
+	high := makeStore(cells[2:])
+	one := openReader(t, graphtable.NewEngineStore(whole), "graph")
+	sharded, err := graphtable.NewSharded([]graphtable.Shard{
+		{Name: "low", End: []byte("ent:host|m"), Store: graphtable.NewEngineStore(low)},
+		{Name: "high", Start: []byte("ent:host|m"), Store: graphtable.NewEngineStore(high)},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	two := openReader(t, sharded, "graph")
+	request := graphtable.VectorRequest{Family: "semantic", Query: packedVector(1, 0), TopK: 2}
+	a, err := one.Vector(context.Background(), request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := two.Vector(context.Background(), request)
+	if err != nil || !reflect.DeepEqual(a, b) || !reflect.DeepEqual([]string{b[0].NodeID, b[1].NodeID}, []string{"ent:host|a", "ent:host|m"}) {
+		t.Fatalf("one store %+v, two shards %+v, %v", a, b, err)
+	}
+	if _, err := two.Vector(context.Background(), graphtable.VectorRequest{Family: "semantic", Query: packedVector(1, 0), TopK: graphtable.MaxNodes + 1}); !errors.Is(err, graphtable.ErrInvalid) {
+		t.Fatalf("unbounded top_k error = %v", err)
+	}
+}
+
+type failingVectorStore struct{}
+
+func (failingVectorStore) Scan(context.Context, *embedpb.ScanRequest) ([]*embedpb.Cell, error) {
+	return nil, errors.New("shard unavailable")
+}
+
+type emptyVectorStore struct{}
+
+func (emptyVectorStore) Scan(context.Context, *embedpb.ScanRequest) ([]*embedpb.Cell, error) {
+	return nil, nil
+}
+
+func TestVectorSearchRefusesUnavailableShard(t *testing.T) {
+	schema := foremanSchema(1)
+	schema.Vectors = []*schemapb.VectorSchema{{Name: "semantic", EmbeddingCf: "vec", EmbeddingSpace: "space-a"}}
+	shards, err := graphtable.NewSharded([]graphtable.Shard{
+		{Name: "low", End: []byte("ent:host|m"), Store: emptyVectorStore{}},
+		{Name: "high", Start: []byte("ent:host|m"), Store: failingVectorStore{}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	reader, err := graphtable.New(schema, shards)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hits, err := reader.Vector(context.Background(), graphtable.VectorRequest{Family: "semantic", Query: packedVector(1, 0), TopK: 2}); err == nil || !strings.Contains(err.Error(), "shard high") || hits != nil {
+		t.Fatalf("partial ranking = %+v, %v", hits, err)
+	}
+	schema.CellVisibility = true
+	guarded, err := graphtable.New(schema, shards)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := guarded.Vector(context.Background(), graphtable.VectorRequest{Family: "semantic", Query: packedVector(1, 0), TopK: 2}); !errors.Is(err, graphtable.ErrInvalid) {
+		t.Fatalf("CV table vector search error = %v", err)
+	}
+}
 
 // foremanCells is a small graph: a service that owns two hosts, one of
 // which observed two events, one event caused by the other, and term
