@@ -76,8 +76,8 @@ type Node struct {
 	// Kind is cut from the row by the namespace's kind rule, or the
 	// namespace name when the layout records no kind in the row.
 	Kind string `json:"kind"`
-	// Found is false for a row the store holds no cell of: a dangling edge
-	// target or a seed that does not exist.
+	// Found is false for a row with no visible cell: a dangling edge target,
+	// a hidden-only row, or a seed that does not exist.
 	Found      bool        `json:"found"`
 	Attributes []Attribute `json:"attributes,omitempty"`
 }
@@ -117,10 +117,11 @@ type NeighborhoodRequest struct {
 // Neighborhood is an expansion's result. Nodes are in discovery order with
 // the seeds first; Edges in the order they were followed. Truncated reports
 // a fanout, node budget, or row cell bound that cut the walk short;
-// DroppedEdges counts edge cells whose target the reader cannot name: a
-// row key that is not UTF-8, longer than MaxRowBytes, or in no node
-// namespace. The engine's EdgeExpand follows any byte string; this reader
-// serves JSON node ids and says what it left out.
+// DroppedEdges counts withheld edge cells and visible edges to hidden-only
+// targets, as well as targets the reader cannot name: a row key that is not
+// UTF-8, longer than MaxRowBytes, or in no node namespace. The engine's
+// EdgeExpand follows any byte string; this reader serves JSON node ids and
+// says what it left out.
 type Neighborhood struct {
 	Nodes        []Node `json:"nodes"`
 	Edges        []Edge `json:"edges"`
@@ -136,14 +137,15 @@ type TermHit struct {
 
 // Ontology is what the descriptor says about the table, for a UI to show.
 type Ontology struct {
-	Table       string             `json:"table"`
-	SchemaID    string             `json:"schema_id"`
-	Version     int32              `json:"version"`
-	Description string             `json:"description,omitempty"`
-	Namespaces  []OntologyNodeKind `json:"namespaces"`
-	Edges       []OntologyEdge     `json:"edges"`
-	Postings    []OntologyPosting  `json:"postings,omitempty"`
-	Vectors     []OntologyVector   `json:"vectors,omitempty"`
+	Table          string             `json:"table"`
+	SchemaID       string             `json:"schema_id"`
+	Version        int32              `json:"version"`
+	CellVisibility bool               `json:"cell_visibility"`
+	Description    string             `json:"description,omitempty"`
+	Namespaces     []OntologyNodeKind `json:"namespaces"`
+	Edges          []OntologyEdge     `json:"edges"`
+	Postings       []OntologyPosting  `json:"postings,omitempty"`
+	Vectors        []OntologyVector   `json:"vectors,omitempty"`
 }
 
 // OntologyNodeKind describes one node namespace.
@@ -201,6 +203,26 @@ type Reader struct {
 
 	// Parallelism bounds the concurrent row reads of one hop.
 	Parallelism int
+}
+
+type cellVisibilityKey struct{}
+
+// WithCellVisibility supplies the caller's CV decision for one read. A
+// described table that declares cell visibility with no decision sees only
+// unlabelled cells. The callback must be safe for concurrent row reads.
+func WithCellVisibility(ctx context.Context, allowed func([]byte) bool) context.Context {
+	if allowed == nil {
+		return ctx
+	}
+	return context.WithValue(ctx, cellVisibilityKey{}, allowed)
+}
+
+func (r *Reader) cellVisible(ctx context.Context, cv []byte) bool {
+	if !r.schema.GetCellVisibility() || len(cv) == 0 {
+		return true
+	}
+	allowed, ok := ctx.Value(cellVisibilityKey{}).(func([]byte) bool)
+	return ok && allowed(cv)
 }
 
 type namespace struct {
@@ -335,7 +357,7 @@ func (r *Reader) Table() string { return r.schema.GetTable() }
 func (r *Reader) Ontology() Ontology {
 	out := Ontology{
 		Table: r.schema.GetTable(), SchemaID: r.schema.GetSchemaId(),
-		Version: r.schema.GetVersion(), Description: r.schema.GetDescription(),
+		Version: r.schema.GetVersion(), CellVisibility: r.schema.GetCellVisibility(), Description: r.schema.GetDescription(),
 		Namespaces: []OntologyNodeKind{}, Edges: []OntologyEdge{},
 	}
 	for _, node := range r.schema.GetNodes() {
@@ -451,19 +473,23 @@ func (r *Reader) Browse(ctx context.Context, req BrowseRequest) (BrowsePage, err
 		return page, err
 	}
 	var current string
+	var lastScanned string
 	var rowCells []*embedpb.Cell
 	finish := func() {
 		if current == "" {
 			return
 		}
-		node, _, _ := r.parseRow(current, rowCells, nil)
-		page.Nodes = append(page.Nodes, node)
+		node, _, _ := r.parseRow(ctx, current, rowCells, nil)
+		if node.Found {
+			page.Nodes = append(page.Nodes, node)
+		}
 	}
 	for _, cell := range cells {
 		row := string(cell.GetRow())
 		if !strings.HasPrefix(row, prefix) || !utf8.ValidString(row) || len(row) > MaxRowBytes {
 			continue
 		}
+		lastScanned = row
 		if row != current {
 			finish()
 			if len(page.Nodes) > req.Limit {
@@ -479,8 +505,8 @@ func (r *Reader) Browse(ctx context.Context, req BrowseRequest) (BrowsePage, err
 	if len(page.Nodes) > req.Limit {
 		page.Nodes = page.Nodes[:req.Limit]
 		page.Next = page.Nodes[len(page.Nodes)-1].ID
-	} else if len(cells) == MaxBrowseCells && len(page.Nodes) > 0 {
-		page.Next = page.Nodes[len(page.Nodes)-1].ID
+	} else if len(cells) == MaxBrowseCells && lastScanned != "" {
+		page.Next = lastScanned
 	}
 	return page, nil
 }
@@ -524,7 +550,7 @@ func (r *Reader) Nodes(ctx context.Context, ids []string) ([]Node, error) {
 	}
 	out := make([]Node, 0, len(ids))
 	for _, id := range ids {
-		node, _, _ := r.parseRow(id, rows[id], nil)
+		node, _, _ := r.parseRow(ctx, id, rows[id], nil)
 		out = append(out, node)
 	}
 	return out, nil
@@ -660,7 +686,8 @@ func (r *Reader) Path(ctx context.Context, from, to string, maxDepth, fanout, ma
 		if err := walk.materializeFrontier(ctx); err != nil {
 			return Neighborhood{}, false, err
 		}
-		return walk.result(), true, nil
+		result := walk.result()
+		return result, len(result.Nodes) > 0, nil
 	}
 	for hop := 0; hop < depth && len(walk.frontier) > 0; hop++ {
 		if err := walk.expand(ctx); err != nil {
@@ -692,7 +719,10 @@ func (r *Reader) Path(ctx context.Context, from, to string, maxDepth, fanout, ma
 	}
 	out := Neighborhood{Edges: chain, Truncated: walk.truncated, DroppedEdges: walk.dropped}
 	for _, id := range ids {
-		node, _, _ := r.parseRow(id, rows[id], nil)
+		node, _, _ := r.parseRow(ctx, id, rows[id], nil)
+		if r.schema.GetCellVisibility() && !node.Found {
+			return Neighborhood{}, false, nil
+		}
 		out.Nodes = append(out.Nodes, node)
 	}
 	return out, true, nil
@@ -723,12 +753,16 @@ func (r *Reader) Terms(ctx context.Context, terms []string) ([]TermHit, error) {
 		return nil, err
 	}
 	out := make([]TermHit, 0, len(terms))
+	checkedNodes := 0
 	for _, term := range terms {
 		hit := TermHit{Term: term, NodeIDs: []string{}}
 		seen := map[string]bool{}
 		for _, posting := range r.schema.GetPostings() {
 			row := posting.GetTermRowPrefix() + term
 			for _, cell := range cells[row] {
+				if !r.cellVisible(ctx, cell.GetColumnVisibility()) {
+					continue
+				}
 				if cf := posting.GetPostingCf(); cf != "" && string(cell.GetColumnFamily()) != cf {
 					continue
 				}
@@ -748,6 +782,35 @@ func (r *Reader) Terms(ctx context.Context, terms []string) ([]TermHit, error) {
 			}
 		}
 		sort.Strings(hit.NodeIDs)
+		if r.schema.GetCellVisibility() && len(hit.NodeIDs) > 0 {
+			checkedNodes += len(hit.NodeIDs)
+			if checkedNodes > MaxNodes {
+				return nil, fmt.Errorf("%w: term lookup exceeds %d candidate nodes", ErrInvalid, MaxNodes)
+			}
+			visibleIDs := make([]string, 0, len(hit.NodeIDs))
+			for start := 0; start < len(hit.NodeIDs); start += MaxSeeds {
+				end := min(start+MaxSeeds, len(hit.NodeIDs))
+				var valid []string
+				for _, id := range hit.NodeIDs[start:end] {
+					if r.validateRow("term target", id) == nil {
+						valid = append(valid, id)
+					}
+				}
+				if len(valid) == 0 {
+					continue
+				}
+				nodes, err := r.Nodes(ctx, valid)
+				if err != nil {
+					return nil, err
+				}
+				for _, node := range nodes {
+					if node.Found {
+						visibleIDs = append(visibleIDs, node.ID)
+					}
+				}
+			}
+			hit.NodeIDs = visibleIDs
+		}
 		out = append(out, hit)
 	}
 	return out, nil
@@ -820,13 +883,13 @@ type rowStats struct {
 
 // parseRow turns a row's cells into its node and out-edges. Cells of a
 // family an edge, vector, or posting entry claims are never attributes.
-func (r *Reader) parseRow(id string, cells []*embedpb.Cell, filter *edgeFilter) (Node, []Edge, rowStats) {
+func (r *Reader) parseRow(ctx context.Context, id string, cells []*embedpb.Cell, filter *edgeFilter) (Node, []Edge, rowStats) {
 	var stats rowStats
 	if len(cells) > MaxRowCells {
 		cells, stats.oversized = cells[:MaxRowCells], true
 	}
 	ns, _ := r.namespaceOf(id)
-	node := Node{ID: id, Key: id[len(ns.spec.GetRowPrefix()):], Identifier: ns.identifierOf(id), Namespace: ns.spec.GetName(), Kind: ns.kindOf(id), Found: len(cells) > 0}
+	node := Node{ID: id, Key: id[len(ns.spec.GetRowPrefix()):], Identifier: ns.identifierOf(id), Namespace: ns.spec.GetName(), Kind: ns.kindOf(id)}
 	var edges []Edge
 	attributeCFs := map[string]bool{}
 	for _, cf := range ns.spec.GetAttributeCfs() {
@@ -837,6 +900,13 @@ func (r *Reader) parseRow(id string, cells []*embedpb.Cell, filter *edgeFilter) 
 			continue
 		}
 		cf := string(cell.GetColumnFamily())
+		if !r.cellVisible(ctx, cell.GetColumnVisibility()) {
+			if _, isEdge := r.edges[cf]; isEdge {
+				stats.dropped++
+			}
+			continue
+		}
+		node.Found = true
 		if family, ok := r.edges[cf]; ok {
 			edge, ok := family.parse(id, cell)
 			if !ok {
@@ -993,7 +1063,7 @@ func (w *walk) expand(ctx context.Context) error {
 		return err
 	}
 	for _, id := range frontier {
-		node, edges, stats := w.reader.parseRow(id, rows[id], w.filter)
+		node, edges, stats := w.reader.parseRow(ctx, id, rows[id], w.filter)
 		w.nodes[id] = node
 		w.dropped += stats.dropped
 		if stats.oversized {
@@ -1026,7 +1096,7 @@ func (w *walk) materializeFrontier(ctx context.Context) error {
 		return err
 	}
 	for _, id := range frontier {
-		node, _, stats := w.reader.parseRow(id, rows[id], nil)
+		node, _, stats := w.reader.parseRow(ctx, id, rows[id], nil)
 		w.nodes[id] = node
 		if stats.oversized {
 			w.truncated = true
@@ -1041,7 +1111,21 @@ func (w *walk) result() Neighborhood {
 		out.Edges = []Edge{}
 	}
 	for _, id := range w.order {
-		out.Nodes = append(out.Nodes, w.nodes[id])
+		node := w.nodes[id]
+		if !w.reader.schema.GetCellVisibility() || node.Found {
+			out.Nodes = append(out.Nodes, node)
+		}
+	}
+	if w.reader.schema.GetCellVisibility() {
+		visibleEdges := out.Edges[:0]
+		for _, edge := range out.Edges {
+			if w.nodes[edge.From].Found && w.nodes[edge.To].Found {
+				visibleEdges = append(visibleEdges, edge)
+			} else {
+				out.DroppedEdges++
+			}
+		}
+		out.Edges = visibleEdges
 	}
 	return out
 }
