@@ -8,7 +8,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/phrocker/shoal-oss/pkg/decision"
+	"github.com/phrocker/shoal-oss/pkg/decision/class"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
@@ -52,7 +52,7 @@ type ClassOutcomes struct {
 // ClassRecord is the measured record of one decision class.
 type ClassRecord struct {
 	ClassID       shoal.ID
-	Class         decision.DecisionClass
+	Class         class.DecisionClass
 	Targets       int
 	Adjudication  ClassAdjudication
 	Outcomes      ClassOutcomes
