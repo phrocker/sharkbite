@@ -12,11 +12,13 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/phrocker/shoal-oss/internal/adjudicatedfixture"
 	"github.com/phrocker/shoal-oss/internal/decisiondatasets"
 	"github.com/phrocker/shoal-oss/internal/decisionlearning"
 	"github.com/phrocker/shoal-oss/internal/engine"
+	decisionapi "github.com/phrocker/shoal-oss/pkg/decision/api"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
@@ -44,6 +46,10 @@ type fixtureCohort struct {
 	// governed source permission; the web caller's authority governs who
 	// may ask for the bytes.
 	sealed decisiondatasets.Bundle
+	// sample is the per-target class material taken at the same time under
+	// the same session, from which a class record over any declared window
+	// is aggregated on request without re-reading the registry.
+	sample decisiondatasets.Sample
 }
 
 // fixtureCohortTasks are the demo's compiled task fixtures.
@@ -100,7 +106,13 @@ func mountFixtureCohorts(stateDir string, tasks []string, output io.Writer) (*fi
 			f.Close()
 			return nil, fmt.Errorf("fixture cohort %s export: %w", task, err)
 		}
-		f.entries[cohort.ID] = &fixtureCohort{engine: eng, cohort: cohort, sealed: bundle}
+		sample, err := adjudicatedfixture.FreshClassSample(ctx, registry, authority.Resolver(), cohort.ID)
+		if err != nil {
+			eng.Close()
+			f.Close()
+			return nil, fmt.Errorf("fixture cohort %s class sample: %w", task, err)
+		}
+		f.entries[cohort.ID] = &fixtureCohort{engine: eng, cohort: cohort, sealed: bundle, sample: sample}
 		f.order = append(f.order, cohort.ID)
 		fmt.Fprintf(output, "learning: fixture cohort %s prepared and exported at pin %s (%d members, synthetic conformance fixture, not a sampling authority)\n", cohort.ID, bundle.ManifestSHA256, len(cohort.Members))
 	}
@@ -114,7 +126,7 @@ func (f *fixtureCohorts) ListCohorts(context.Context) ([]decisionlearning.Cohort
 	out := make([]decisionlearning.Cohort, 0, len(f.order))
 	for _, id := range f.order {
 		c := f.entries[id].cohort
-		out = append(out, decisionlearning.Cohort{ID: c.ID, TaskID: string(c.Task.ID()), LabelPolicyID: string(c.Policy.ID()), Members: len(c.Members), Mode: c.Mode})
+		out = append(out, decisionlearning.Cohort{ID: c.ID, TaskID: string(c.Task.ID()), LabelPolicyID: string(c.Policy.ID()), Members: len(c.Members), Mode: c.Mode, Cutoff: c.Cutoff.UTC().Format(time.RFC3339Nano)})
 	}
 	return out, nil
 }
@@ -150,6 +162,55 @@ type fixtureDatasetProvider struct{ f *fixtureCohorts }
 
 func (p fixtureDatasetProvider) Export(ctx context.Context, id shoal.ID) (decisiondatasets.Bundle, error) {
 	return p.f.bundle(ctx, id)
+}
+
+// fixtureClassProvider aggregates the sealed class sample of one fixture
+// cohort over the window the caller declares. The sample was taken under the
+// demo's exporter session; the web caller's authority governs who may ask.
+type fixtureClassProvider struct{ f *fixtureCohorts }
+
+func (p fixtureClassProvider) ClassRecords(ctx context.Context, req decisionapi.ClassRecordRequest) (decisionapi.ClassRecords, error) {
+	var zero decisionapi.ClassRecords
+	if err := req.Validate(); err != nil {
+		return zero, shoal.NewError(shoal.ErrorInvalidArgument, "invalid class record request")
+	}
+	if ctx.Err() != nil {
+		return zero, ctx.Err()
+	}
+	p.f.mu.Lock()
+	entry, ok := p.f.entries[req.CohortID]
+	var sample decisiondatasets.Sample
+	if ok {
+		sample = entry.sample
+	}
+	p.f.mu.Unlock()
+	if !ok {
+		return zero, shoal.NewError(shoal.ErrorNotFound, "cohort "+string(req.CohortID)+" is not a prepared fixture cohort")
+	}
+	w := decisiondatasets.Window{From: req.From, To: req.To}
+	if w.To.IsZero() {
+		w.To = sample.Cutoff
+	}
+	records, err := decisiondatasets.Aggregate(sample, w)
+	if err != nil {
+		return zero, err
+	}
+	return classRecordsToAPI(records), nil
+}
+
+func classRecordsToAPI(r decisiondatasets.Records) decisionapi.ClassRecords {
+	out := decisionapi.ClassRecords{CohortID: r.CohortID, TaskID: r.TaskID, QuestionID: r.QuestionID, PolicyID: r.PolicyID, Cutoff: r.Cutoff, From: r.Window.From, To: r.Window.To, Members: r.Members, InWindow: r.InWindow, Outside: r.Outside}
+	for _, c := range r.Classes {
+		rec := decisionapi.ClassRecord{ClassID: c.ClassID, Class: c.Class, Targets: c.Targets, FirstObserved: c.FirstObserved, LastObserved: c.LastObserved}
+		rec.Adjudication = decisionapi.ClassAdjudication{VerifiedAgree: c.Adjudication.VerifiedAgree, VerifiedDisagree: c.Adjudication.VerifiedDisagree, Disputed: c.Adjudication.Disputed, Unresolved: c.Adjudication.Unresolved, None: c.Adjudication.None, Withdrawn: c.Adjudication.Withdrawn, Stale: c.Adjudication.Stale, Later: c.Adjudication.Later, TrainingDenied: c.Adjudication.TrainingDenied}
+		rec.Outcomes = decisionapi.ClassOutcomes{Receipts: c.Outcomes.Receipts, Correctness: c.Outcomes.Correctness, Superseded: c.Outcomes.Superseded}
+		if c.Precision != nil {
+			v := *c.Precision
+			rec.Precision = &v
+		}
+		out.Classes = append(out.Classes, rec)
+	}
+	return out
 }
 
 // Close releases every prepared registry's engine.

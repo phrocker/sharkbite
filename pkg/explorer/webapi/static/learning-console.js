@@ -96,14 +96,14 @@
         const rows = (value.cohorts || []).map((row) => {
           const c = row.cohort || {};
           const e = row.latest_export;
-          return [c.cohort_id, c.task_id, c.label_policy_id, c.members, e ? e.manifest_sha256 : "(no export)", e ? JSON.stringify(e.quarantine) : ""];
+          return [c.cohort_id, c.task_id, c.label_policy_id, c.members, c.cutoff || "", e ? e.manifest_sha256 : "(no export)", e ? JSON.stringify(e.quarantine) : ""];
         });
         for (const e of value.exports || []) {
           if (!(value.cohorts || []).some((row) => row.cohort && row.cohort.cohort_id === e.cohort_id)) {
-            rows.push([e.cohort_id, e.task_id, e.label_policy_id, e.rows, e.manifest_sha256, JSON.stringify(e.quarantine)]);
+            rows.push([e.cohort_id, e.task_id, e.label_policy_id, e.rows, "", e.manifest_sha256, JSON.stringify(e.quarantine)]);
           }
         }
-        summary.appendChild(table(["cohort", "task", "label policy", "members/rows", "manifest pin", "quarantine"], rows));
+        summary.appendChild(table(["cohort", "task", "label policy", "members/rows", "cutoff", "manifest pin", "quarantine"], rows));
         break;
       }
       case "jobs": {

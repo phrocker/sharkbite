@@ -134,6 +134,43 @@ func (a changingAuthority) Verify(ctx context.Context, d auth.Decision, c decisi
 	a.change()
 	return a.cohortAuthority.Verify(ctx, d, c, targets)
 }
+
+// The class sample is taken under the export session and agrees with the
+// export about every label: the sealed fixtures' verified labels are the
+// export's labels, and the two unknown fixtures are counted, not dropped.
+func TestSealedClassSampleAgreesWithTheExport(t *testing.T) {
+	r, e, a, ctx, err := Prepare(filepath.Join(t.TempDir(), "bundle"), "source")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer e.Close()
+	sample, err := FreshClassSample(ctx, r, a.Resolver(), r.cohort.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sample.Rows) != 16 || sample.CohortID != r.cohort.ID || !sample.Cutoff.Equal(r.cohort.Cutoff) {
+		t.Fatalf("%+v", sample)
+	}
+	byStatus := map[string]int{}
+	for _, row := range sample.Rows {
+		byStatus[row.Status]++
+		if row.Class.Abstained || (row.Class.Label != "positive" && row.Class.Label != "negative") || row.OutcomeReceipts == 0 && row.Status == decisiondatasets.StatusVerified {
+			t.Fatalf("row %+v", row)
+		}
+	}
+	if byStatus[decisiondatasets.StatusVerified] != 14 || byStatus[decisiondatasets.StatusVerified]+byStatus[decisiondatasets.StatusNone]+byStatus[decisiondatasets.StatusUnresolved]+byStatus[decisiondatasets.StatusDisputed] != 16 {
+		t.Fatalf("statuses %+v", byStatus)
+	}
+	records, err := decisiondatasets.Aggregate(sample, decisiondatasets.Window{From: sample.Cutoff.Add(-24 * time.Hour), To: sample.Cutoff})
+	if err != nil || records.InWindow != 16 || len(records.Classes) < 1 || len(records.Classes) > 2 {
+		t.Fatalf("%v %+v", err, records)
+	}
+	// A caller outside the exporter session cannot take a sample at all.
+	if _, err := FreshClassSample(context.Background(), r, a.Resolver(), r.cohort.ID); err == nil {
+		t.Fatal("sample taken without a session")
+	}
+}
+
 func TestFinalInventoryAndTrainingRecheck(t *testing.T) {
 	r, e, a, ctx, err := Prepare(filepath.Join(t.TempDir(), "bundle"), "source")
 	if err != nil {

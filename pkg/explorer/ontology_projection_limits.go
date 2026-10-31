@@ -33,7 +33,7 @@ type OntologyProjectionLimits struct {
 	MaxConstraintsPerProperty   uint32
 	MaxAllowedValues            uint32
 	MaxTransitions              uint32
-	MaxMorphismEvidence         uint32
+	MaxMorphismEvidence         uint32 // Also bounds complete exposure for evidence-bearing proposals.
 	MaxDiscriminatorChoices     uint32
 }
 
@@ -104,6 +104,13 @@ func (l OntologyProjectionLimits) ValidateProposal(proposal ontology.GovernedPro
 		"proposal transition", len(proposal.Transitions()), l.MaxTransitions,
 	); err != nil {
 		return err
+	}
+	if len(proposal.ExplicitEvidence()) > 0 {
+		if err := ontologyProjectionBound(
+			"proposal evidence", len(proposal.Evidence()), l.MaxMorphismEvidence,
+		); err != nil {
+			return err
+		}
 	}
 	for _, morphism := range proposal.Morphisms() {
 		if err := ontologyProjectionBound(

@@ -75,6 +75,7 @@ const (
 	CapabilityRegistrations Capability = "decision_registrations"
 	CapabilityDatasets      Capability = "decision_datasets"
 	CapabilityOutcomes      Capability = "decision_outcomes"
+	CapabilityClasses       Capability = "decision_classes"
 	CapabilityAdjudications Capability = "decision_adjudications"
 	CapabilityLearning      Capability = "decision_learning"
 	CapabilityGraphTable    Capability = "graph_table"
@@ -96,6 +97,10 @@ type Capabilities struct {
 	Registrations bool `json:"decision_registrations"`
 	Datasets      bool `json:"decision_datasets"`
 	Outcomes      bool `json:"decision_outcomes"`
+	// Classes reports the measured record of decision classes at
+	// DecisionClassesRoute, a read over existing outcome and adjudication
+	// records.
+	Classes       bool `json:"decision_classes"`
 	Adjudications bool `json:"decision_adjudications"`
 	Learning      bool `json:"decision_learning"`
 	// GraphTable reports a described engine table visible to this decision
@@ -144,6 +149,8 @@ func (c Capabilities) Supports(capability Capability) bool {
 		return c.Datasets
 	case CapabilityOutcomes:
 		return c.Outcomes
+	case CapabilityClasses:
+		return c.Classes
 	case CapabilityAdjudications:
 		return c.Adjudications
 	case CapabilityLearning:

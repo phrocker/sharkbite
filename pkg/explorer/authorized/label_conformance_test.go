@@ -842,6 +842,14 @@ func labelRows() []labelRow {
 			}
 			return true
 		}},
+		{"create ontology proposal at base evidence", "CreateOntologyProposalAtBase", func(t *testing.T, w *labelWorld, ctx context.Context, target *labelTarget) bool {
+			err := w.clientA.CreateOntologyProposalAtBase(ctx, w.proposal(t, target), w.ontology)
+			if err != nil {
+				requireNotFound(t, "CreateOntologyProposalAtBase", err)
+				return false
+			}
+			return true
+		}},
 		{"restrict disclosure", "RestrictDisclosure", func(t *testing.T, w *labelWorld, ctx context.Context, target *labelTarget) bool {
 			allowed, err := w.clientA.RestrictDisclosure(
 				ctx, []shoal.ID{target.current.Document.ID})

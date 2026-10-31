@@ -35,7 +35,9 @@ adjudicated training demo's sealed synthetic fixture census at startup as
 the authority and exporter, exports each cohort once at startup, and also
 mounts `/api/v1/dataset-exports` over the same sealed bytes, so a trainer on
 the host fetches exactly the export whose pin the learning service recorded
-and dataset export, distillation, and promotion can be exercised end to end.
+and dataset export, distillation, and promotion can be exercised end to end;
+it also mounts `/api/v1/decision-classes` over a class sample sealed beside
+each export ([decision classes](decision-classes.md)).
 It is a finite conformance fixture regenerated on every start under a fresh
 cohort identity (so exports recorded by an earlier start stay attached to
 that start's cohort), never a repository sampling authority.

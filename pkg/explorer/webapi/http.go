@@ -336,6 +336,7 @@ func mergeDecisionCapabilities(base, mounted Capabilities) Capabilities {
 	base.Registrations = mounted.Registrations
 	base.Datasets = mounted.Datasets
 	base.Outcomes = mounted.Outcomes
+	base.Classes = mounted.Classes
 	base.Adjudications = mounted.Adjudications
 	base.Learning = mounted.Learning
 	base.GraphTable = mounted.GraphTable
@@ -355,6 +356,8 @@ func (h *Handler) enableDecisionCapability(capability Capability) {
 		h.decisionCapabilities.Datasets = true
 	case CapabilityOutcomes:
 		h.decisionCapabilities.Outcomes = true
+	case CapabilityClasses:
+		h.decisionCapabilities.Classes = true
 	case CapabilityAdjudications:
 		h.decisionCapabilities.Adjudications = true
 	}
