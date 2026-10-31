@@ -237,6 +237,14 @@ Direct reader calls without a caller visibility decision see only cells
 with an empty `cv`. Browse cursors are encrypted for such tables so a page
 boundary cannot expose a hidden row key. Trusted-service decisions are
 refused for a cell-visibility table until a service ceiling is supplied.
+Vector search uses the descriptor's `vectors[]` family and stable embedding
+space, asks every intersecting shard for its top results, and merges the
+scores. The `POST /api/v1/graph-table/vector` body carries `family`, a
+base64-encoded packed float32 `query_b64`, and `top_k` (at most 2048). A
+failed shard fails the whole ranking. A table with `cell_visibility: true`
+cannot serve this pushdown yet: the store's vector scan has no caller grant
+field, so filtering its scored results afterward could silently omit better
+visible matches.
 Writes through the workspace to a described table,
 documents, and citations are out of scope: a described table has nodes
 and edges.
