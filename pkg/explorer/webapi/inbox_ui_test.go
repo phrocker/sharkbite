@@ -49,8 +49,11 @@ const listing = {generated_at: "2026-10-31T12:00:00Z", approvals: {available: tr
   candidates: {available: false, items: []}};
 let decideCalls = 0;
 let inboxCalls = 0;
+let statusCalls = 0;
 let finishDecision;
 const pendingDecision = new Promise((resolve) => { finishDecision = resolve; });
+let finishFirstStatus;
+const firstStatus = new Promise((resolve) => { finishFirstStatus = resolve; });
 const response = (body, ok = true, status = 200) => ({ok, status, statusText: "Conflict", json: async () => body});
 const mock = {
   document: {
@@ -63,7 +66,10 @@ const mock = {
   apiError: (body, reply) => Object.assign(new Error(body.message), {status: reply.status, code: body.code}),
   fetch: async (path) => {
     if (path === "/api/v1/inbox") { inboxCalls++; return response(listing); }
-    if (path.endsWith("/status")) return response({...row, input: {target: "preview"}});
+    if (path.endsWith("/status")) {
+      statusCalls++;
+      return statusCalls === 1 ? firstStatus : response({...row, input: {target: "preview"}});
+    }
     if (path.endsWith("/resolve")) return response({generation: 1, capabilities: []});
     if (path.endsWith("/decide")) { decideCalls++; return pendingDecision; }
     throw new Error("unexpected inbox request " + path);
@@ -76,10 +82,17 @@ const details = group.children[1];
 ids["inbox"].children.push(group);
 details.open = true;
 details.listeners.toggle();
+details.open = false;
+details.listeners.toggle();
+details.open = true;
+details.listeners.toggle();
 await new Promise(setImmediate);
 const controls = details.children[2];
 const [approve, refuse] = controls.querySelectorAll("button");
 assert.ok(approve && refuse);
+finishFirstStatus(response({...row, state: "expired"}));
+await new Promise(setImmediate);
+assert.strictEqual(controls.querySelectorAll("button").length, 3);
 const first = approve.onclick();
 await refuse.onclick();
 assert.strictEqual(decideCalls, 1);
