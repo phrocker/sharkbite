@@ -189,6 +189,8 @@ func TestStaticWorkspaceMountsOperatorInbox(t *testing.T) {
 		`request_digest`,
 		`policy_generation`,
 		`reload the inbox before deciding`,
+		`requires sign-in again`,
+		`cannot create a request id safely`,
 		`explorer:view`,
 	} {
 		if !strings.Contains(script, required) {

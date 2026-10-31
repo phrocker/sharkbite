@@ -28,9 +28,14 @@ const InboxRoute = "/api/v1/inbox"
 // MaxApprovalListResults; the inbox walks pages up to MaxInboxApprovals and
 // says when it stopped.
 const (
-	MaxInboxApprovals  = 256
-	MaxInboxCandidates = 32
-	MaxInboxCohorts    = 8
+	MaxInboxApprovals = 256
+	// MaxInboxApprovalPages bounds the store rows one read scans: the
+	// pending route filters each page to what the caller may decide, so a
+	// page can be empty with more behind it, and the walk continues until
+	// the cursor ends or this many pages have been read.
+	MaxInboxApprovalPages = 16
+	MaxInboxCandidates    = 32
+	MaxInboxCohorts       = 8
 	// DefaultInboxRecordWindow is how far before now the measured record
 	// beside a candidate reaches, when the host declares nothing else.
 	DefaultInboxRecordWindow = 365 * 24 * time.Hour
@@ -44,9 +49,10 @@ type InboxSurface struct {
 	Approvals FleetApprovalProvider
 	Learning  decisionapi.LearningProvider
 	Classes   decisionapi.ClassRecordProvider
-	// RecordWindow is the declared span, ending now, over which the
-	// measured record beside a candidate is computed; the record itself
-	// states the window it was served for. Zero means the default.
+	// RecordWindow is how far before now the declared window of the
+	// measured record beside a candidate begins; the window ends at the
+	// cohort's own cutoff, and the record states the window it was served
+	// for. Zero means the default.
 	RecordWindow time.Duration
 	Now          func() time.Time
 }
@@ -115,6 +121,10 @@ type inboxItemWire struct {
 	Approval  *fleetApprovalWire  `json:"approval,omitempty"`
 	Candidate *inboxCandidateWire `json:"candidate,omitempty"`
 	Classes   []inboxClassWire    `json:"classes,omitempty"`
+	// ClassesError says why no class record could be attempted: the
+	// candidate's training job could not be read. It is never set beside
+	// Classes.
+	ClassesError string `json:"classes_error,omitempty"`
 }
 
 type inboxGroupWire struct {
@@ -232,7 +242,11 @@ func (h *inboxHTTP) serve(w http.ResponseWriter, r *http.Request) {
 func (h *inboxHTTP) approvals(ctx context.Context, requestContext fleet.RequestContext, out *inboxApprovalsWire) error {
 	var after []byte
 	var records []fleet.ApprovalRecord
-	for {
+	for pages := 0; ; pages++ {
+		if pages == MaxInboxApprovalPages {
+			out.Truncated = true
+			break
+		}
 		page, err := h.surface.Approvals.Pending(ctx, fleet.PendingApprovalsRequest{After: after, Limit: fleet.MaxApprovalListResults, Context: requestContext})
 		if err != nil {
 			if shoal.IsErrorCode(err, shoal.ErrorUnauthorized) {
@@ -251,11 +265,13 @@ func (h *inboxHTTP) approvals(ctx context.Context, requestContext fleet.RequestC
 		}
 		records = append(records, page.Approvals...)
 		if len(records) >= MaxInboxApprovals {
+			out.Truncated = len(records) > MaxInboxApprovals || len(page.Next) > 0
 			records = records[:MaxInboxApprovals]
-			out.Truncated = len(page.Next) > 0 || len(page.Approvals) > 0 && len(records) == MaxInboxApprovals && len(page.Next) > 0
 			break
 		}
-		if len(page.Next) == 0 || len(page.Approvals) == 0 {
+		// An empty page is not the end: the service filtered it. Only an
+		// exhausted cursor is.
+		if len(page.Next) == 0 {
 			break
 		}
 		after = page.Next
@@ -336,13 +352,16 @@ func (h *inboxHTTP) candidates(ctx context.Context, out *inboxCandidatesWire) er
 				Release map[string]any `json:"release"`
 			} `json:"history"`
 		}
-		if err := json.Unmarshal(raw, &releases); err == nil {
-			if releases.Active != nil {
-				released[inboxString(releases.Active.Release, "candidate_id")] = true
-			}
-			for _, r := range releases.History {
-				released[inboxString(r.Release, "candidate_id")] = true
-			}
+		if err := json.Unmarshal(raw, &releases); err != nil {
+			// Releases that cannot be read would let a taken candidate
+			// reappear as awaiting promotion; that is the failure.
+			return shoal.NewError(shoal.ErrorUnavailable, "learning releases are not readable")
+		}
+		if releases.Active != nil {
+			released[inboxString(releases.Active.Release, "candidate_id")] = true
+		}
+		for _, r := range releases.History {
+			released[inboxString(r.Release, "candidate_id")] = true
 		}
 	} else {
 		return learningInboxError(err)
@@ -374,23 +393,26 @@ func (h *inboxHTTP) candidates(ctx context.Context, out *inboxCandidatesWire) er
 		if item.Candidate.Evaluations == nil {
 			item.Candidate.Evaluations = json.RawMessage("[]")
 		}
-		item.Classes = h.classes(ctx, item.Candidate.TrainingManifestPin)
+		item.Classes, item.ClassesError = h.classes(ctx, item.Candidate.TrainingManifestPin)
 		out.Items = append(out.Items, item)
 	}
 	return nil
 }
 
 // classes resolves the cohorts a candidate's job consumed and serves the
-// measured record of each over the declared window. Without a class
-// provider nothing is listed; a cohort whose record this caller cannot read
-// is listed with the reason, never with a thinned record.
-func (h *inboxHTTP) classes(ctx context.Context, pin string) []inboxClassWire {
+// measured record of each over the declared window: from the record window
+// before now to the cohort's own cutoff. Without a class provider nothing is
+// listed; a job that cannot be read is said; a cohort whose record this
+// caller cannot read is listed with the reason, never with a thinned record;
+// a record the class route would refuse for a substituted cohort or window
+// is refused here too.
+func (h *inboxHTTP) classes(ctx context.Context, pin string) ([]inboxClassWire, string) {
 	if isAbsentInterface(h.surface.Classes) || pin == "" {
-		return nil
+		return nil, ""
 	}
 	raw, err := h.surface.Learning.Job(ctx, pin)
 	if err != nil {
-		return nil
+		return nil, "training job unavailable"
 	}
 	var job struct {
 		Job struct {
@@ -400,7 +422,7 @@ func (h *inboxHTTP) classes(ctx context.Context, pin string) []inboxClassWire {
 		} `json:"job"`
 	}
 	if err := json.Unmarshal(raw, &job); err != nil {
-		return nil
+		return nil, "training job unavailable"
 	}
 	from := h.surface.Now().UTC().Add(-h.surface.RecordWindow)
 	var out []inboxClassWire
@@ -417,7 +439,8 @@ func (h *inboxHTTP) classes(ctx context.Context, pin string) []inboxClassWire {
 		records, err := h.surface.Classes.ClassRecords(ctx, decisionapi.ClassRecordRequest{CohortID: shoal.ID(export.CohortID), From: from})
 		if err == nil {
 			var encoded []byte
-			if encoded, err = decisionapi.EncodeClassRecords(records); err == nil && records.CohortID == shoal.ID(export.CohortID) {
+			substituted := records.CohortID != shoal.ID(export.CohortID) || !records.From.Equal(from) || !records.To.Equal(records.Cutoff)
+			if encoded, err = decisionapi.EncodeClassRecords(records); err == nil && !substituted {
 				entry.Records = encoded
 			} else {
 				entry.Error = "class record unavailable"
@@ -434,7 +457,7 @@ func (h *inboxHTTP) classes(ctx context.Context, pin string) []inboxClassWire {
 		}
 		out = append(out, entry)
 	}
-	return out
+	return out, ""
 }
 
 func learningInboxError(err error) error {

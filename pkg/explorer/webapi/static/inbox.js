@@ -47,6 +47,9 @@
 
   function newKey() {
     const bytes = new Uint8Array(18);
+    if (!window.crypto || !window.crypto.getRandomValues) {
+      throw new Error("this browser cannot create a request id safely");
+    }
     window.crypto.getRandomValues(bytes);
     let value = "";
     for (const byte of bytes) value += String.fromCharCode(byte);
@@ -92,10 +95,21 @@
     return value ? String(value).replace("T", " ").replace(/\.\d+Z$/, "Z") : "";
   }
 
+  // A refused action is shown as the route said it; a bearer challenge goes
+  // through the same sign-in-again path as the sibling consoles.
+  function failed(label, error) {
+    show({error: error.message || String(error), code: error.code || "", status: error.status || 0});
+    if (typeof needsReauthentication === "function" && needsReauthentication(error)) {
+      if (typeof handleReauthentication === "function") handleReauthentication();
+      setStatus(`${label} requires sign-in again.`, true);
+    } else {
+      setStatus(`${label} refused: ${error.message || error}`, true);
+    }
+  }
+
   // Selecting an item selects it everywhere: the inspectors read this.
   const selection = {kind: "", id: "", object: ""};
   function select(kind, id, object) {
-    selection.kind, selection.id, selection.object = kind, id, object || "";
     selection.kind = kind;
     selection.id = id;
     selection.object = object || "";
@@ -188,8 +202,7 @@
           setStatus(`Request ${item.id} is now ${record.state}.`);
           await load();
         } catch (error) {
-          show({error: error.message || String(error), code: error.code || "", status: error.status || 0});
-          setStatus(`Decision refused: ${error.message || error}`, true);
+          failed("Decision", error);
           button.disabled = false;
         }
       };
@@ -201,7 +214,11 @@
     controls.appendChild(inspect);
   }
 
-  function renderClassRecords(container, classes) {
+  function renderClassRecords(container, classes, classesError) {
+    if (classesError) {
+      container.appendChild(el("p", "error", `No measured record: ${classesError}.`));
+      return;
+    }
     if (!classes || !classes.length) {
       container.appendChild(el("p", "muted", "No measured record is served beside this candidate."));
       return;
@@ -234,7 +251,7 @@
     body.appendChild(el("h3", "", "Evaluations"));
     body.appendChild(table(["id", "disposition", "permitted action", "reasons"], (cand.evaluations || []).map((e) => [e.id, e.disposition, e.permitted_action || "", JSON.stringify(e.reasons || [])])));
     body.appendChild(el("h3", "", "Measured record of the cohorts it was trained on"));
-    renderClassRecords(body, item.classes);
+    renderClassRecords(body, item.classes, item.classes_error);
     controls.textContent = "";
     const promote = el("button", "", "Promote to shadow release");
     promote.type = "button";
@@ -247,8 +264,7 @@
         setStatus(`Candidate ${item.id} promoted.`);
         await load();
       } catch (error) {
-        show({error: error.message || String(error), code: error.code || "", status: error.status || 0});
-        setStatus(`Promotion refused: ${error.message || error}`, true);
+        failed("Promotion", error);
         promote.disabled = false;
       }
     };

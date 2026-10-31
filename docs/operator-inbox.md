@@ -44,15 +44,22 @@ those objects, and adds no authority of its own.
   shadow candidate that no release, active or past, has taken, with its
   evaluations, lineage, and the evaluation a promotion would cite. Beside
   each candidate is the [measured record](decision-classes.md) of every cohort
-  its job consumed, over a window the host declares (`-inbox-record-window`,
-  one year by default) ending now; a cohort whose record this caller cannot
-  read, or whose cutoff the window does not reach, is listed with that
-  reason, never with a thinned record.
+  its job consumed, over a window that begins `-inbox-record-window` (one
+  year by default) before now and ends at the cohort's own cutoff; the record
+  states the window it was served for. A cohort whose record this caller
+  cannot read, or whose cutoff the window does not reach, is listed with that
+  reason, never with a thinned record; a record the class route would refuse
+  for a substituted cohort or window is refused here too; a candidate whose
+  training job cannot be read says so instead of listing cohorts.
 
 A section whose provider is not mounted says so. A read that fails for any
-reason other than "not an approver" fails the inbox; nothing is composed under
-an authority that moved while it was being read. The inbox walks at most 256
-approvals and 32 candidates and says when it stopped.
+reason other than "not an approver" fails the inbox, including a releases
+listing that cannot be read, since that would let a taken candidate reappear;
+nothing is composed under an authority that moved while it was being read.
+The pending route filters each page to what the caller may decide, so a page
+can be empty with more behind it; the inbox walks until the cursor ends or
+sixteen pages have been read, lists at most 256 approvals and 32 candidates,
+and says when it stopped.
 
 The request body carries the same `context` the fleet routes take
 (`request_id`, `reason_code`, `deadline`); it is required when an approval

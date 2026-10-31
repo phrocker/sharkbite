@@ -256,9 +256,10 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 			"repository sampling authority.")
 	inboxRecordWindow := flags.Duration(
 		"inbox-record-window", webapi.DefaultInboxRecordWindow,
-		"How far before now the measured record beside an inbox candidate "+
-			"reaches; the record states the window it was served for. The "+
-			"inbox is mounted whenever the approval or learning service is.")
+		"How far before now the window of the measured record beside an "+
+			"inbox candidate begins; it ends at the cohort's cutoff and the "+
+			"record states the window it was served for. The inbox is "+
+			"mounted whenever the approval or learning service is.")
 	studentDevice := flags.String(
 		"student-device", firstNonEmpty(os.Getenv("SHOAL_STUDENT_DEVICE"), "cpu"),
 		"Device the active release was promoted for; a runtime reporting "+

@@ -106,9 +106,10 @@ const inboxReleases = `{"active":{"release":{"candidate_id":"cand-released"}},"h
 const inboxJob = `{"job":{"manifest_pin":"pin-1","exports":[{"cohort_id":"cohort","manifest_sha256":"x"},{"cohort_id":"other","manifest_sha256":"y"},{"cohort_id":"cohort","manifest_sha256":"x"}]}}`
 
 type inboxClassStub struct {
-	calls int
-	reqs  []decisionapi.ClassRecordRequest
-	err   map[string]error
+	calls      int
+	reqs       []decisionapi.ClassRecordRequest
+	err        map[string]error
+	substitute func(*decisionapi.ClassRecords)
 }
 
 func (s *inboxClassStub) ClassRecords(_ context.Context, req decisionapi.ClassRecordRequest) (decisionapi.ClassRecords, error) {
@@ -121,6 +122,9 @@ func (s *inboxClassStub) ClassRecords(_ context.Context, req decisionapi.ClassRe
 	r.From = req.From
 	r.Cutoff, r.To = inboxNow, inboxNow
 	r.Classes[0].FirstObserved, r.Classes[0].LastObserved = inboxNow.Add(-time.Minute), inboxNow.Add(-time.Minute)
+	if s.substitute != nil {
+		s.substitute(&r)
+	}
 	return r, nil
 }
 
@@ -258,6 +262,47 @@ func TestInboxSaysWhenTheCallerIsNotAnApprover(t *testing.T) {
 	}
 }
 
+// The pending route filters each page to what the caller may decide, so an
+// empty page with a cursor behind it is not the end; the walk continues,
+// and a non-full last page past the bound is reported as truncated.
+func TestInboxWalksPastFilteredPagesAndReportsEveryStop(t *testing.T) {
+	f := newInboxFixture(t, nil)
+	f.approvals.pages = [][]fleet.ApprovalRecord{{}, {}, {inboxApproval("behind", "ops", "deploy", inboxNow)}}
+	code, out := f.read(t, inboxBody())
+	approvals := out["approvals"].(map[string]any)
+	if code != 200 || len(approvals["groups"].([]any)) != 1 || approvals["truncated"] != false || f.approvals.calls != 3 {
+		t.Fatalf("filtered pages hid a request: %d %v calls=%d", code, approvals, f.approvals.calls)
+	}
+	var pages [][]fleet.ApprovalRecord
+	for p := 0; p < 5; p++ {
+		var page []fleet.ApprovalRecord
+		for i := 0; i < 63; i++ {
+			page = append(page, inboxApproval(fmt.Sprintf("b-%d-%d", p, i), "ops", "deploy", inboxNow.Add(-time.Duration(p*100+i)*time.Second)))
+		}
+		pages = append(pages, page)
+	}
+	g := newInboxFixture(t, nil)
+	g.approvals.pages = pages
+	code, out = g.read(t, inboxBody())
+	approvals = out["approvals"].(map[string]any)
+	items := approvals["groups"].([]any)[0].(map[string]any)["items"].([]any)
+	if code != 200 || len(items) != MaxInboxApprovals || approvals["truncated"] != true {
+		t.Fatalf("dropped rows without saying so: items=%d truncated=%v", len(items), approvals["truncated"])
+	}
+	// A cursor that never ends stops at the page cap and says so.
+	var endless [][]fleet.ApprovalRecord
+	for p := 0; p < MaxInboxApprovalPages+4; p++ {
+		endless = append(endless, nil)
+	}
+	e := newInboxFixture(t, nil)
+	e.approvals.pages = endless
+	code, out = e.read(t, inboxBody())
+	approvals = out["approvals"].(map[string]any)
+	if code != 200 || approvals["truncated"] != true || e.approvals.calls != MaxInboxApprovalPages {
+		t.Fatalf("page cap: truncated=%v calls=%d", approvals["truncated"], e.approvals.calls)
+	}
+}
+
 func TestInboxWalksPagesAndStops(t *testing.T) {
 	f := newInboxFixture(t, nil)
 	var pages [][]fleet.ApprovalRecord
@@ -361,9 +406,34 @@ func TestInboxCandidateFailuresAreTheFailure(t *testing.T) {
 	f.learning.errs = map[string]error{"job:pin-1": errors.New("gone")}
 	code, out = f.read(t, inboxBody())
 	item := out["candidates"].(map[string]any)["items"].([]any)[0].(map[string]any)
-	if code != 200 || item["classes"] != nil {
-		t.Fatalf("a job that cannot be read still produced records: %d %v", code, item)
+	if code != 200 || item["classes"] != nil || item["classes_error"] != "training job unavailable" {
+		t.Fatalf("a job that cannot be read is not said: %d %v", code, item)
 	}
+	// Releases that cannot be read would let a taken candidate reappear.
+	f.learning.errs = nil
+	f.learning.replies["releases"] = `{"active":[],"history":{}}`
+	if code, out = f.read(t, inboxBody()); code != 503 || strings.Contains(fmt.Sprint(out), "cand-released") {
+		t.Fatalf("unreadable releases: %d %v", code, out)
+	}
+	f.learning.replies["releases"] = inboxReleases
+	// A record the class route would refuse for a substituted window is
+	// refused here too.
+	f.classes.substitute = func(r *decisionapi.ClassRecords) { r.From = r.From.Add(29 * 24 * time.Hour) }
+	_, out = f.read(t, inboxBody())
+	served := out["candidates"].(map[string]any)["items"].([]any)[0].(map[string]any)["classes"].([]any)[0].(map[string]any)
+	if served["records"] != nil || served["error"] != "class record unavailable" {
+		t.Fatalf("substituted window served: %v", served)
+	}
+	f.classes.substitute = func(r *decisionapi.ClassRecords) {
+		r.To = r.Cutoff.Add(-time.Hour)
+		r.Classes[0].FirstObserved, r.Classes[0].LastObserved = r.To, r.To
+	}
+	_, out = f.read(t, inboxBody())
+	served = out["candidates"].(map[string]any)["items"].([]any)[0].(map[string]any)["classes"].([]any)[0].(map[string]any)
+	if served["records"] != nil {
+		t.Fatalf("window not ending at the cutoff served: %v", served)
+	}
+	f.classes.substitute = nil
 	f.learning.errs = nil
 	f.classes.err = map[string]error{"cohort": shoal.NewError(shoal.ErrorInvalidArgument, "window"), "other": errors.New("private")}
 	_, out = f.read(t, inboxBody())
