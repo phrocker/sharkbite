@@ -472,6 +472,14 @@ func (r ExtractionResult) Validate() error {
 		if err := validateBoundedMetadata(proposal.Metadata(), r.limits); err != nil {
 			return err
 		}
+		if uint64(len(proposal.Evidence())) > uint64(r.limits.MaxEvidence) {
+			return invalid("proposal evidence exceeds result limit")
+		}
+		for _, evidence := range proposal.ExplicitEvidence() {
+			if err := validateBoundedEvidenceMetadata(evidence, r.limits); err != nil {
+				return err
+			}
+		}
 		for _, morphism := range proposal.Morphisms() {
 			if uint64(len(morphism.Evidence())) > uint64(r.limits.MaxEvidence) {
 				return invalid("morphism evidence exceeds result limit")
@@ -753,6 +761,12 @@ func (r ExtractionResult) ValidateFor(request ExtractionRequest) error {
 		baseVersionID, present := proposal.BaseVersionID()
 		if !present || baseVersionID != request.version.ID() {
 			return invalid("extracted proposal does not use the request ontology version")
+		}
+		for _, evidence := range proposal.Evidence() {
+			metadata, exists := requestEvidence[evidence.ID()]
+			if !exists || metadata != canonicalMetadata(evidence.metadata) {
+				return invalid("proposal cites evidence outside the extraction request")
+			}
 		}
 	}
 	return nil
@@ -1243,6 +1257,9 @@ func (c *payloadCounter) addProposal(proposal GovernedProposal) {
 	c.addString(proposal.proposedBy)
 	c.addString(proposal.rationale)
 	c.addMetadata(proposal.metadata)
+	for _, evidence := range proposal.evidence {
+		c.addEvidence(evidence)
+	}
 	for _, transition := range proposal.transitions {
 		c.addString(transition.actor)
 		c.addString(transition.note)
@@ -1281,6 +1298,13 @@ func proposalPayloadBytes(proposal GovernedProposal) uint64 {
 		len(canonicalMetadata(proposal.schema.metadata))+
 		len(canonicalMetadata(proposal.metadata))) +
 		ontologyVersionPayloadBytes(proposal.proposedVersion)
+	for _, evidence := range proposal.evidence {
+		evidenceSize := evidencePayloadBytes(evidence)
+		if evidenceSize > ^uint64(0)-size {
+			return ^uint64(0)
+		}
+		size += evidenceSize
+	}
 	for _, transition := range proposal.transitions {
 		size += uint64(len(transition.actor) + len(transition.note))
 	}

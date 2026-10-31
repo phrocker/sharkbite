@@ -2065,8 +2065,12 @@ type GovernedProposal struct {
 	state           ProposalState
 	transitions     []ProposalTransition
 	morphisms       []OntologyMorphism
+	evidence        []EvidenceRef
 	metadata        shoal.Metadata
 }
+
+// MaxProposalEvidence bounds the complete source exposure of evidence-bearing proposals.
+const MaxProposalEvidence = 256
 
 // NewGovernedProposal creates a draft proposal. baseVersion may be zero for
 // the first version of a schema.
@@ -2095,10 +2099,48 @@ func NewGovernedProposalWithMorphisms(
 	createdAt time.Time,
 	metadata shoal.Metadata,
 ) (GovernedProposal, error) {
+	return newGovernedProposal(schema, baseVersion, proposedVersion, morphisms, nil,
+		proposedBy, rationale, createdAt, metadata)
+}
+
+// NewGovernedProposalWithEvidence creates a draft binding all exposed sources,
+// including sources not cited by any morphism, to its immutable identity.
+func NewGovernedProposalWithEvidence(
+	schema OntologySchema,
+	baseVersion OntologyVersion,
+	proposedVersion OntologyVersion,
+	morphisms []OntologyMorphism,
+	evidence []EvidenceRef,
+	proposedBy, rationale string,
+	createdAt time.Time,
+	metadata shoal.Metadata,
+) (GovernedProposal, error) {
+	if len(evidence) == 0 || len(evidence) > MaxProposalEvidence {
+		return GovernedProposal{}, invalid("proposal evidence is required and must fit the public bound")
+	}
+	return newGovernedProposal(schema, baseVersion, proposedVersion, morphisms, evidence,
+		proposedBy, rationale, createdAt, metadata)
+}
+
+func newGovernedProposal(
+	schema OntologySchema,
+	baseVersion OntologyVersion,
+	proposedVersion OntologyVersion,
+	morphisms []OntologyMorphism,
+	evidence []EvidenceRef,
+	proposedBy, rationale string,
+	createdAt time.Time,
+	metadata shoal.Metadata,
+) (GovernedProposal, error) {
+	normalized, err := normalizeProposalEvidence(evidence)
+	if err != nil {
+		return GovernedProposal{}, err
+	}
 	proposal := GovernedProposal{
 		schema:          schema.clone(),
 		proposedVersion: proposedVersion.clone(),
 		morphisms:       cloneMorphisms(morphisms),
+		evidence:        normalized,
 		proposedBy:      proposedBy, rationale: rationale,
 		createdAt: normalizeTime(createdAt), state: ProposalDraft,
 		metadata: cloneMetadata(metadata),
@@ -2171,6 +2213,32 @@ func (p GovernedProposal) Validate() error {
 			return invalid("proposal morphisms must be unique and canonically ordered")
 		}
 	}
+	if len(p.evidence) > 0 {
+		if len(p.evidence) > MaxProposalEvidence || len(p.Evidence()) > MaxProposalEvidence {
+			return invalid("proposal evidence exceeds the public bound")
+		}
+		for index, evidence := range p.evidence {
+			if err := evidence.Validate(); err != nil {
+				return err
+			}
+			if index > 0 && p.evidence[index-1].ID() >= evidence.ID() {
+				return invalid("proposal evidence must be unique and canonically ordered")
+			}
+		}
+		all := cloneEvidence(p.evidence)
+		for _, morphism := range p.morphisms {
+			all = append(all, morphism.Evidence()...)
+		}
+		if _, err := normalizeProposalEvidence(all); err != nil {
+			return err
+		}
+		for _, evidence := range all {
+			citation := evidence.Citation()
+			if evidence.hasDerivation || citation.SectionID == "" && citation.SpanID == "" {
+				return invalid("proposal evidence requires authorizable citations")
+			}
+		}
+	}
 	if !requiredWire(p.proposedBy) || !requiredWire(p.rationale) {
 		return invalid("proposal author and rationale are required")
 	}
@@ -2203,6 +2271,21 @@ func (p GovernedProposal) Validate() error {
 		return invalid("proposal ID is not canonical")
 	}
 	return nil
+}
+
+// ValidateEvolution validates this proposal and its exact base before applying
+// the shared semantic evolution rules.
+func (p GovernedProposal) ValidateEvolution(base OntologyVersion) error {
+	if err := p.Validate(); err != nil {
+		return err
+	}
+	if err := base.Validate(); err != nil {
+		return err
+	}
+	if base.ID() != p.baseVersionID || base.Schema().ID() != p.schema.ID() {
+		return invalid("proposal base version does not match")
+	}
+	return validateProposalEvolution(base, p.ProposedVersion(), p.Morphisms())
 }
 
 // Transition returns a new proposal with a governance transition appended.
@@ -2272,6 +2355,33 @@ func (p GovernedProposal) Morphisms() []OntologyMorphism {
 	return cloneMorphisms(p.morphisms)
 }
 
+// ExplicitEvidence returns the independently recorded proposal source exposure.
+// Morphism evidence is available through Evidence.
+func (p GovernedProposal) ExplicitEvidence() []EvidenceRef {
+	return cloneEvidence(p.evidence)
+}
+
+// Evidence returns the canonical, deduplicated union of proposal and morphism evidence.
+func (p GovernedProposal) Evidence() []EvidenceRef {
+	all := cloneEvidence(p.evidence)
+	for _, morphism := range p.morphisms {
+		all = append(all, morphism.Evidence()...)
+	}
+	sort.Slice(all, func(i, j int) bool {
+		if all[i].ID() != all[j].ID() {
+			return all[i].ID() < all[j].ID()
+		}
+		return canonicalMetadata(all[i].metadata) < canonicalMetadata(all[j].metadata)
+	})
+	union := make([]EvidenceRef, 0, len(all))
+	for _, evidence := range all {
+		if len(union) == 0 || union[len(union)-1].ID() != evidence.ID() {
+			union = append(union, evidence)
+		}
+	}
+	return union
+}
+
 func (p GovernedProposal) Metadata() shoal.Metadata {
 	return cloneMetadata(p.metadata)
 }
@@ -2281,6 +2391,7 @@ func (p GovernedProposal) clone() GovernedProposal {
 	p.proposedVersion = p.proposedVersion.clone()
 	p.transitions = append([]ProposalTransition(nil), p.transitions...)
 	p.morphisms = cloneMorphisms(p.morphisms)
+	p.evidence = cloneEvidence(p.evidence)
 	p.metadata = cloneMetadata(p.metadata)
 	return p
 }
@@ -2324,10 +2435,36 @@ func proposalID(proposal GovernedProposal) (shoal.ID, error) {
 		}
 		parts = append(parts, canonicalParts(ids...))
 	}
+	if len(proposal.evidence) > 0 {
+		refs := make([]string, len(proposal.evidence))
+		for i, evidence := range proposal.evidence {
+			refs[i] = canonicalParts(string(evidence.ID()), canonicalMetadata(evidence.metadata))
+		}
+		parts = append(parts, "proposal-evidence-v1", canonicalParts(refs...))
+	}
 	return deriveID(
 		"proposal",
 		parts...,
 	)
+}
+
+func normalizeProposalEvidence(values []EvidenceRef) ([]EvidenceRef, error) {
+	cloned := cloneEvidence(values)
+	sort.Slice(cloned, func(i, j int) bool { return cloned[i].ID() < cloned[j].ID() })
+	normalized := make([]EvidenceRef, 0, len(cloned))
+	for _, evidence := range cloned {
+		if err := evidence.Validate(); err != nil {
+			return nil, err
+		}
+		if len(normalized) > 0 && normalized[len(normalized)-1].ID() == evidence.ID() {
+			if canonicalMetadata(normalized[len(normalized)-1].metadata) != canonicalMetadata(evidence.metadata) {
+				return nil, invalid("proposal evidence has conflicting metadata")
+			}
+			continue
+		}
+		normalized = append(normalized, evidence)
+	}
+	return normalized, nil
 }
 
 func cloneMorphisms(values []OntologyMorphism) []OntologyMorphism {

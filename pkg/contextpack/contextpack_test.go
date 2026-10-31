@@ -1089,7 +1089,12 @@ func TestGraphAnchorCarriesAuthoritativeInferredAssertion(t *testing.T) {
 	testGraphAnchorCarriesAuthoritativeAssertion(t, ontology.AssertionInferred)
 }
 
-func testGraphAnchorCarriesAuthoritativeAssertion(t *testing.T, origin ontology.AssertionOrigin) {
+func TestGraphAnchorCarriesCanonicalExtractedAssertion(t *testing.T) {
+	testGraphAnchorCarriesAuthoritativeAssertion(t, ontology.AssertionExplicit, true)
+	testGraphAnchorCarriesAuthoritativeAssertion(t, ontology.AssertionInferred, true)
+}
+
+func testGraphAnchorCarriesAuthoritativeAssertion(t *testing.T, origin ontology.AssertionOrigin, shared ...bool) {
 	t.Helper()
 	_, _, response, _ := embeddedFixture(t)
 	citation := response.Results[0].Evidence[0].Citation
@@ -1121,10 +1126,15 @@ func testGraphAnchorCarriesAuthoritativeAssertion(t *testing.T, origin ontology.
 	if err != nil {
 		t.Fatal(err)
 	}
+	edgeID, confidence := shoal.ID("edge-1"), shoal.Score(1)
+	canonical := len(shared) > 0 && shared[0]
+	if canonical {
+		edgeID, confidence = "inferred-edge:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", 0.7
+	}
 	assertion, err := ontology.NewAssertion(
-		"source", relationship.ID(), value, origin, 1,
+		"source", relationship.ID(), value, origin, confidence,
 		[]ontology.EvidenceRef{evidence}, provenance,
-		shoal.Metadata{"shoal.graph.edge_id": "edge-1"},
+		shoal.Metadata{"shoal.graph.edge_id": string(edgeID)},
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -1132,9 +1142,30 @@ func testGraphAnchorCarriesAuthoritativeAssertion(t *testing.T, origin ontology.
 	path := graph.Path{
 		Nodes: []graph.Node{{ID: "source"}, {ID: "target"}},
 		Edges: []graph.Edge{{
-			ID: "edge-1", From: "source", To: "target",
+			ID: edgeID, From: "source", To: "target",
 			Type: string(relationship.ID()), Weight: 1,
 		}},
+	}
+	if canonical {
+		path.Edges[0].Type = relationship.Key()
+		path.Edges[0].Properties = shoal.Metadata{"ontology_relationship_id": string(relationship.ID())}
+		for _, corrupt := range []string{"predicate", "weight", "properties", "target"} {
+			edge := path.Edges[0]
+			edge.Properties = shoal.Metadata{"ontology_relationship_id": string(relationship.ID())}
+			switch corrupt {
+			case "predicate":
+				edge.Properties["ontology_relationship_id"] = "other-predicate"
+			case "weight":
+				edge.Weight = confidence
+			case "properties":
+				edge.Properties["non-canonical"] = "value"
+			case "target":
+				edge.To = "other-target"
+			}
+			if assertionMatchesEvidenceEdge(assertion, edge) {
+				t.Fatalf("accepted corrupt canonical extracted %s", corrupt)
+			}
+		}
 	}
 	verifier, err := newVerifier(
 		context.Background(), nil, mustLimits(t, Limits{}), nil,
@@ -1156,15 +1187,15 @@ func testGraphAnchorCarriesAuthoritativeAssertion(t *testing.T, origin ontology.
 	}
 	if len(reference.Assertions) != 1 ||
 		reference.Assertions[0].AssertionID != assertion.ID() ||
-		reference.Assertions[0].EdgeID != "edge-1" ||
+		reference.Assertions[0].EdgeID != edgeID ||
 		reference.Assertions[0].Origin != origin {
 		t.Fatalf("authoritative assertion reference = %+v", reference.Assertions)
 	}
 	changed, err := ontology.NewAssertion(
-		"source", relationship.ID(), value, origin, 1,
+		"source", relationship.ID(), value, origin, confidence,
 		[]ontology.EvidenceRef{evidence}, provenance,
 		shoal.Metadata{
-			"shoal.graph.edge_id": "edge-1",
+			"shoal.graph.edge_id": string(edgeID),
 			"annotation":          "changed without changing assertion identity",
 		},
 	)
@@ -1181,7 +1212,7 @@ func testGraphAnchorCarriesAuthoritativeAssertion(t *testing.T, origin ontology.
 		t.Fatalf("changed assertion metadata across hydrations = %v", err)
 	}
 	remapped, err := ontology.NewAssertion(
-		"source", relationship.ID(), value, origin, 1,
+		"source", relationship.ID(), value, origin, confidence,
 		[]ontology.EvidenceRef{evidence}, provenance,
 		shoal.Metadata{"shoal.graph.edge_id": "edge-2"},
 	)
