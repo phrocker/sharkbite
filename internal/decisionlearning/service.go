@@ -70,6 +70,9 @@ type Cohort struct {
 	LabelPolicyID string   `json:"label_policy_id"`
 	Members       int      `json:"members"`
 	Mode          string   `json:"provenance_mode"`
+	// Cutoff is the cohort's declared label time, RFC 3339, when the
+	// authority states it; a class record's window ends at or before it.
+	Cutoff string `json:"cutoff,omitempty"`
 }
 
 // CohortLister lists the cohorts registered with the host's authority.

@@ -157,6 +157,17 @@
               <button type="submit">Export cohort</button>
             </form>
           </section>
+          <section class="decision-card" aria-labelledby="decision-classes-heading">
+            <h3 id="decision-classes-heading">Decision classes</h3>
+            <p class="muted">The measured record of every class in a cohort: how the adjudication in force at the cohort cutoff judged each predicted label, over the observation window you declare. Unknown, disputed, and unadjudicated targets stay in the denominator. A record is a read; it promotes nothing.</p>
+            <form id="decision-classes-form" class="stack">
+              <label for="decision-classes-cohort">Cohort ID (as listed under Learning › Datasets)<input id="decision-classes-cohort" required autocomplete="off" spellcheck="false" placeholder="sealed-fixture-cohort:source:…"></label>
+              <label for="decision-classes-from">Observed from (UTC)<input id="decision-classes-from" type="datetime-local" required step="1"></label>
+              <label for="decision-classes-to">Observed to (UTC, blank = cohort cutoff)<input id="decision-classes-to" type="datetime-local" step="1"></label>
+              <button type="submit">Read class records</button>
+            </form>
+            <div id="decision-classes-summary" class="learning-summary" aria-live="polite"></div>
+          </section>
           <section class="decision-card" aria-labelledby="outcome-read-heading">
             <h3 id="outcome-read-heading">Outcome receipt</h3>
             <form id="outcome-read-form" class="stack">

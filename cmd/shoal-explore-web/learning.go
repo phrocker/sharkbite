@@ -227,6 +227,12 @@ func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.R
 			fixtures.Close()
 			return nil, err
 		}
+		// The measured record of every decision class in a fixture cohort,
+		// aggregated from the class sample sealed beside the export.
+		if err := handler.MountDecisionClasses(fixtureClassProvider{fixtures}, resolver); err != nil {
+			fixtures.Close()
+			return nil, err
+		}
 	}
 	service, err := decisionlearning.New(decisionlearning.Config{
 		Registry: registry, Store: store, Prefix: cfg.stateDir, EvidenceDir: cfg.evidenceDir,

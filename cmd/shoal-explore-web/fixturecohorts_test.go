@@ -96,6 +96,49 @@ func TestFixtureCohortsFeedTheLearningService(t *testing.T) {
 	if err != nil || served.ManifestSHA256 != export.ManifestSHA256 || !bytes.Equal(served.Manifest, again.Manifest) || len(served.Dataset) == 0 {
 		t.Fatalf("dataset route bytes differ: %v", err)
 	}
+	// The class sample was sealed beside the export, and a class record over
+	// any declared window is aggregated from it on request. The sealed
+	// cohort's two labels each form a class; the window must be declared and
+	// may end at the cutoff by omission.
+	cutoff := datasets.Cohorts[0].Cohort.Cutoff
+	cut, err := time.Parse(time.RFC3339Nano, cutoff)
+	if err != nil || cut.IsZero() {
+		t.Fatalf("cohort listing carries no cutoff: %q %v", cutoff, err)
+	}
+	provider := fixtureClassProvider{cohorts}
+	records, err := provider.ClassRecords(ctx, decisionapi.ClassRecordRequest{CohortID: id, From: cut.Add(-24 * time.Hour)})
+	// The fixture's baseline predictor selects one label for every fixture,
+	// so the sealed cohort has one class, and its measured record is the
+	// honest one: half of the verified adjudications disagree with it.
+	if err != nil || records.CohortID != id || !records.To.Equal(cut) || records.Members != 16 || records.InWindow != 16 || len(records.Classes) < 1 || len(records.Classes) > 2 {
+		t.Fatalf("%v %+v", err, records)
+	}
+	targets, verified := 0, 0
+	for _, c := range records.Classes {
+		if c.Class.Abstained || (c.Class.Label != "positive" && c.Class.Label != "negative") || c.Targets < 1 {
+			t.Fatalf("unexpected class %+v", c.Class)
+		}
+		targets += c.Targets
+		verified += c.Adjudication.VerifiedAgree + c.Adjudication.VerifiedDisagree
+		if c.Adjudication.VerifiedAgree+c.Adjudication.VerifiedDisagree+c.Adjudication.Disputed+c.Adjudication.Unresolved+c.Adjudication.None != c.Targets {
+			t.Fatalf("counts do not add up: %+v", c.Adjudication)
+		}
+	}
+	if targets != 16 || verified != 14 {
+		t.Fatalf("targets=%d verified=%d", targets, verified)
+	}
+	if encoded, err := decisionapi.EncodeClassRecords(records); err != nil || len(encoded) == 0 {
+		t.Fatalf("records do not encode: %v", err)
+	}
+	if _, err := provider.ClassRecords(ctx, decisionapi.ClassRecordRequest{CohortID: id, From: cut.Add(-24 * time.Hour), To: cut.Add(time.Second)}); !shoal.IsErrorCode(err, shoal.ErrorInvalidArgument) {
+		t.Fatalf("window past the cutoff: %v", err)
+	}
+	if _, err := provider.ClassRecords(ctx, decisionapi.ClassRecordRequest{CohortID: "not-a-cohort", From: cut.Add(-24 * time.Hour)}); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		t.Fatalf("unknown cohort: %v", err)
+	}
+	if _, err := provider.ClassRecords(ctx, decisionapi.ClassRecordRequest{CohortID: id}); !shoal.IsErrorCode(err, shoal.ErrorInvalidArgument) {
+		t.Fatalf("undeclared window: %v", err)
+	}
 	// The export was sealed at mount time, under the demo's one-hour
 	// exporter decision, so nothing on the request path depends on it.
 	if cohorts.entries[id].sealed.ManifestSHA256 != export.ManifestSHA256 {

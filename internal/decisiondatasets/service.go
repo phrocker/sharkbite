@@ -14,6 +14,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	journal "github.com/phrocker/shoal-oss/internal/decisionadjudicationstore"
 	"github.com/phrocker/shoal-oss/pkg/decision"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
@@ -169,6 +170,30 @@ func idsEqual(a, b []shoal.ID) bool {
 	return true
 }
 
+// validateHistory checks that a target's adjudication history is the exact
+// chain the journal would have appended under this cohort's policy, and
+// returns the index of the last receipt at or before the cohort cutoff (-1
+// when none) and the current head id. Export and the class sample share it so
+// a label and a count can never disagree about which adjudication is in force.
+func validateHistory(c Cohort, m Member, target, pictureID shoal.ID, history []journal.Receipt, now time.Time) (int, shoal.ID, error) {
+	selected := -1
+	var previous shoal.ID
+	var previousTime time.Time
+	for j, h := range history {
+		cfg := h.ProposalConfig
+		pid, err := decision.AdjudicationProposalID(c.Policy.ID(), target, cfg)
+		if err != nil || pid != h.ProposalID || h.TargetID != target || h.TaskID != c.Task.ID() || h.PictureID != pictureID || h.PolicyID != c.Policy.ID() || cfg.SubjectID != m.SubjectID || cfg.QuestionID != c.QuestionID || h.Version != int64(j+1) || cfg.ExpectedHeadID != previous || cfg.ExpectedVersion != int64(j) || !receiptID(h.ID, "adjudication-receipt:") || !idOK(h.BasisID) || !stamp(h.ReceivedAt) || h.ReceivedAt.Before(previousTime) || h.ReceivedAt.After(now) {
+			return 0, "", denied()
+		}
+		previous = h.ID
+		previousTime = h.ReceivedAt
+		if !h.ReceivedAt.After(c.Cutoff) {
+			selected = j
+		}
+	}
+	return selected, previous, nil
+}
+
 // Export materializes one registered cohort. It performs all reads before the
 // final joint check and never turns an unverified observation into a negative.
 func (s *Service) Export(ctx context.Context, cohortID shoal.ID) (Bundle, error) {
@@ -282,20 +307,9 @@ func (s *Service) Export(ctx context.Context, cohortID shoal.ID) (Bundle, error)
 			}
 			outcomeSet[id] = true
 		}
-		selected := -1
-		var previous shoal.ID
-		var previousTime time.Time
-		for j, h := range t.History {
-			cfg := h.ProposalConfig
-			pid, err := decision.AdjudicationProposalID(c.Policy.ID(), target, cfg)
-			if err != nil || pid != h.ProposalID || h.TargetID != target || h.TaskID != c.Task.ID() || h.PictureID != r.Picture().ID() || h.PolicyID != c.Policy.ID() || cfg.SubjectID != m.SubjectID || cfg.QuestionID != c.QuestionID || h.Version != int64(j+1) || cfg.ExpectedHeadID != previous || cfg.ExpectedVersion != int64(j) || !receiptID(h.ID, "adjudication-receipt:") || !idOK(h.BasisID) || !stamp(h.ReceivedAt) || h.ReceivedAt.Before(previousTime) || h.ReceivedAt.After(now) {
-				return zero, denied()
-			}
-			previous = h.ID
-			previousTime = h.ReceivedAt
-			if !h.ReceivedAt.After(c.Cutoff) {
-				selected = j
-			}
+		selected, previous, e := validateHistory(c, m, target, r.Picture().ID(), t.History, now)
+		if e != nil {
+			return zero, e
 		}
 		status := "unknown"
 		var label any
