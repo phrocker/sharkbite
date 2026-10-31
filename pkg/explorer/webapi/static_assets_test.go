@@ -24,6 +24,24 @@ import (
 	"testing"
 )
 
+func TestInboxOpensForOperatorButNotGraphViewer(t *testing.T) {
+	runNodeUITest(t, `
+const identity = (operations) => ({authenticated: true, subject: "demo", actor: "demo",
+  authorization_domain: "demo", operations, policy_generation: 1,
+  authentication_expires: "2027-01-01T00:00:00Z"});
+const viewer = await runScenario({inbox: true, documents: true}, [],
+  {identity: identity(["read", "retrieve"])});
+assert.strictEqual(viewer.ids["tab-inbox"].disabled, false);
+assert.strictEqual(viewer.ids.inbox.classList.has("active"), false);
+const approver = await runScenario({inbox: true, documents: true}, [],
+  {identity: identity(["read", "action_approve"])});
+assert.strictEqual(approver.ids.inbox.classList.has("active"), true);
+const learner = await runScenario({inbox: true, decision_learning: true, documents: true}, [],
+  {identity: identity(["read"])});
+assert.strictEqual(learner.ids.inbox.classList.has("active"), true);
+`)
+}
+
 func TestStaticWorkspaceVectorModeBehavior(t *testing.T) {
 	runNodeUITest(t, `
 const unavailable = await runScenario({
@@ -1153,6 +1171,7 @@ function makeDocument(capabilities, documents) {
   const tabs = {};
   const inputs = [];
   const document = {
+    body: new Element("body"),
     getElementById(id) { return ids[id]; },
     createElement(tag) { return new Element(tag); },
     createDocumentFragment() { return new Element("fragment"); },
@@ -1201,11 +1220,13 @@ function makeDocument(capabilities, documents) {
   }
   ids["mode-vector-control"] = new Element("label", "mode-vector-control");
   ids["vector-mode-status"] = new Element("span", "vector-mode-status");
-  for (const name of ["evidence", "graph"]) panels[name] = new Element("div");
-  for (const name of ["evidence", "graph"]) {
+  for (const name of ["evidence", "graph", "inbox"]) panels[name] = new Element("div");
+  for (const name of ["evidence", "graph", "inbox"]) {
     tabs[name] = new Element("button");
     tabs[name].dataset.panel = name;
   }
+  ids.inbox = panels.inbox;
+  ids["tab-inbox"] = tabs.inbox;
   return {document, ids};
 }
 
