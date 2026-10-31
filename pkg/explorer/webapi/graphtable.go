@@ -20,16 +20,22 @@ package webapi
 import (
 	"bytes"
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
 	"github.com/phrocker/shoal-oss/internal/graphtable"
+	"github.com/phrocker/shoal-oss/internal/visfilter"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
@@ -92,6 +98,20 @@ func (h *Handler) MountGraphTable(surface GraphTableSurface) error {
 		return err
 	}
 	handler := &graphTableHTTP{surface: surface}
+	if surface.Reader.Ontology().CellVisibility {
+		key := make([]byte, 32)
+		if _, err := rand.Read(key); err != nil {
+			return err
+		}
+		block, err := aes.NewCipher(key)
+		if err != nil {
+			return err
+		}
+		handler.cursorCipher, err = cipher.NewGCM(block)
+		if err != nil {
+			return err
+		}
+	}
 	if err := h.MountAuthenticated(GraphTableRoute+"/", handler); err != nil {
 		return err
 	}
@@ -100,7 +120,41 @@ func (h *Handler) MountGraphTable(surface GraphTableSurface) error {
 	return nil
 }
 
-type graphTableHTTP struct{ surface GraphTableSurface }
+type graphTableHTTP struct {
+	surface      GraphTableSurface
+	cursorCipher cipher.AEAD
+}
+
+func (g *graphTableHTTP) encodeCursor(row string) (string, error) {
+	if row == "" || g.cursorCipher == nil {
+		return row, nil
+	}
+	nonce := make([]byte, g.cursorCipher.NonceSize())
+	if _, err := rand.Read(nonce); err != nil {
+		return "", err
+	}
+	sealed := g.cursorCipher.Seal(nonce, nonce, []byte(row), []byte(g.surface.Reader.Ontology().Table))
+	return base64.RawURLEncoding.EncodeToString(sealed), nil
+}
+
+func (g *graphTableHTTP) decodeCursor(token string) (string, error) {
+	if token == "" || g.cursorCipher == nil {
+		return token, nil
+	}
+	if len(token) > 8192 {
+		return "", graphtable.ErrInvalid
+	}
+	sealed, err := base64.RawURLEncoding.DecodeString(token)
+	if err != nil || len(sealed) < g.cursorCipher.NonceSize() {
+		return "", graphtable.ErrInvalid
+	}
+	nonce := sealed[:g.cursorCipher.NonceSize()]
+	row, err := g.cursorCipher.Open(nil, nonce, sealed[g.cursorCipher.NonceSize():], []byte(g.surface.Reader.Ontology().Table))
+	if err != nil {
+		return "", graphtable.ErrInvalid
+	}
+	return string(row), nil
+}
 
 func (g *graphTableHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
@@ -150,7 +204,12 @@ func (g *graphTableHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			writeError(w, err)
 			return
 		}
-		value, err := g.dispatch(r.Context(), rest, body)
+		ctx, err := g.cellVisibilityContext(r.Context(), decision)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		value, err := g.dispatch(ctx, rest, body)
 		if err != nil {
 			writeError(w, graphTableError(err))
 			return
@@ -159,6 +218,34 @@ func (g *graphTableHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		writeError(w, shoal.NewError(shoal.ErrorNotFound, "no such graph table route"))
 	}
+}
+
+func (g *graphTableHTTP) cellVisibilityContext(ctx context.Context, decision auth.Decision) (context.Context, error) {
+	if !g.surface.Reader.Ontology().CellVisibility {
+		return ctx, nil
+	}
+	if decision.TrustedService() {
+		return nil, shoal.NewError(shoal.ErrorUnauthorized, "graph cell visibility requires a user decision")
+	}
+	var mu sync.Mutex
+	permitted := map[string]bool{}
+	evaluator := visfilter.NewPredicateEvaluator(func(label []byte) bool {
+		key := string(label)
+		if value, ok := permitted[key]; ok {
+			return value
+		}
+		value, err := auth.VisibilityPermittedForUser(decision, []string{key}, time.Now())
+		permitted[key] = err == nil && value
+		return permitted[key]
+	})
+	return graphtable.WithCellVisibility(ctx, func(cv []byte) bool {
+		mu.Lock()
+		defer mu.Unlock()
+		if !time.Now().Before(decision.AuthenticationExpires()) {
+			return false
+		}
+		return evaluator.Visible(cv)
+	}), nil
 }
 
 func (g *graphTableHTTP) resolve(ctx context.Context) (auth.Decision, error) {
@@ -334,7 +421,15 @@ func (g *graphTableHTTP) dispatch(ctx context.Context, route string, raw []byte)
 		if err := decodeGraphTableBody(raw, &req); err != nil {
 			return nil, err
 		}
-		page, err := g.surface.Reader.Browse(ctx, graphtable.BrowseRequest{Namespace: req.Namespace, Kind: req.Kind, IdentifierPrefix: req.IdentifierPrefix, After: req.After, Limit: req.Limit})
+		after, err := g.decodeCursor(req.After)
+		if err != nil {
+			return nil, err
+		}
+		page, err := g.surface.Reader.Browse(ctx, graphtable.BrowseRequest{Namespace: req.Namespace, Kind: req.Kind, IdentifierPrefix: req.IdentifierPrefix, After: after, Limit: req.Limit})
+		if err != nil {
+			return nil, err
+		}
+		next, err := g.encodeCursor(page.Next)
 		if err != nil {
 			return nil, err
 		}
@@ -342,7 +437,7 @@ func (g *graphTableHTTP) dispatch(ctx context.Context, route string, raw []byte)
 		for _, node := range page.Nodes {
 			items = append(items, wireNode{ID: node.ID, Kind: node.Kind, Labels: []string{graphTableDisplayName(node), node.Namespace}})
 		}
-		return wireGraphTableBrowse{Table: table, Nodes: items, Next: page.Next}, nil
+		return wireGraphTableBrowse{Table: table, Nodes: items, Next: next}, nil
 	case "nodes":
 		var req graphTableNodesRequest
 		if err := decodeGraphTableBody(raw, &req); err != nil {

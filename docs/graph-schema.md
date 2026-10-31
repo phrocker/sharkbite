@@ -228,7 +228,16 @@ A described table is trusted ingest exposed under one label,
 `-graph-table-label`: a reader must hold that label's grant (for
 `-dev-auth`, `-dev-auth-labels shoal-explore-web/workspace=<label>`), and a
 reader who does not is told no such route exists. Per-cell visibility from
-`cv` is not applied. Writes through the workspace to a described table,
+`cv` is enforced when the descriptor sets `cell_visibility: true`. The
+Explorer evaluates each cell's Accumulo visibility expression against the
+user decision's structured domain, source, and policy grants. Withheld
+attributes are absent, withheld edges are not followed and contribute to
+`dropped_edges`, and a row with no visible cells is reported as absent.
+Direct reader calls without a caller visibility decision see only cells
+with an empty `cv`. Browse cursors are encrypted for such tables so a page
+boundary cannot expose a hidden row key. Trusted-service decisions are
+refused for a cell-visibility table until a service ceiling is supplied.
+Writes through the workspace to a described table,
 documents, and citations are out of scope: a described table has nodes
 and edges.
 

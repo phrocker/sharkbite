@@ -27,29 +27,83 @@ import (
 	"testing"
 	"time"
 
+	"github.com/phrocker/shoal-oss/internal/embedpb"
 	"github.com/phrocker/shoal-oss/internal/graphtable"
+	"github.com/phrocker/shoal-oss/internal/schemapb"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
 )
 
 type graphTableStub struct {
-	last    string
-	seeds   []string
-	depth   int
-	invalid bool
+	last           string
+	seeds          []string
+	depth          int
+	invalid        bool
+	cellVisibility bool
+	next, after    string
+}
+
+type graphVisibilityStore struct{ cells []*embedpb.Cell }
+
+func (s graphVisibilityStore) Scan(_ context.Context, req *embedpb.ScanRequest) ([]*embedpb.Cell, error) {
+	if string(req.GetStartRow()) == "ent:service|api" {
+		return s.cells, nil
+	}
+	return nil, nil
+}
+
+func TestGraphTableVisibilityUsesCallerGrantsAndCVGrammar(t *testing.T) {
+	allowedComponent, _ := auth.EncodeComponent([]byte("domain"))
+	deniedComponent, _ := auth.EncodeComponent([]byte("other"))
+	allowed := "d:" + allowedComponent
+	denied := "d:" + deniedComponent
+	row := []byte("ent:service|api")
+	store := graphVisibilityStore{cells: []*embedpb.Cell{
+		{Row: row, ColumnFamily: []byte("service"), ColumnQualifier: []byte("name"), ColumnVisibility: []byte(allowed), Value: []byte("visible")},
+		{Row: row, ColumnFamily: []byte("service"), ColumnQualifier: []byte("secret"), ColumnVisibility: []byte(denied), Value: []byte("hidden")},
+		{Row: row, ColumnFamily: []byte("service"), ColumnQualifier: []byte("either"), ColumnVisibility: []byte(allowed + "|" + denied), Value: []byte("or visible")},
+		{Row: row, ColumnFamily: []byte("service"), ColumnQualifier: []byte("both"), ColumnVisibility: []byte(allowed + "&" + denied), Value: []byte("and hidden")},
+	}}
+	reader, err := graphtable.New(&schemapb.TableSchema{Table: "graph", SchemaId: "foreman.graph", Version: 1, CellVisibility: true,
+		Nodes: []*schemapb.NodeSchema{{Name: "entity", RowPrefix: "ent:", KindSep: "|", AttributeQualifier: schemapb.QualifierRole_QUALIFIER_ROLE_FIELD, AttributeEncoding: schemapb.ValueEncoding_VALUE_ENCODING_TEXT}}}, store)
+	if err != nil {
+		t.Fatal(err)
+	}
+	decision, err := auth.NewDecision(auth.DecisionConfig{Subject: "subject", Actor: "actor", AuthorizationDomain: []byte("domain"), AllowedOperations: []auth.Operation{auth.OperationNeighborhood}, PermittedSourceIDs: [][]byte{[]byte("source")}, PermittedPolicyIDs: [][]byte{[]byte("label-policy")}, PolicyGeneration: 1, AuthenticationExpires: time.Now().Add(time.Hour), RequestID: "request"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	g := &graphTableHTTP{surface: GraphTableSurface{Reader: reader}}
+	ctx, err := g.cellVisibilityContext(context.Background(), decision)
+	if err != nil {
+		t.Fatal(err)
+	}
+	nodes, err := reader.Nodes(ctx, []string{"ent:service|api"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !nodes[0].Found || len(nodes[0].Attributes) != 2 {
+		t.Fatalf("visible cells = %+v", nodes[0])
+	}
+	for _, attr := range nodes[0].Attributes {
+		if attr.Value == "hidden" || attr.Value == "and hidden" {
+			t.Fatalf("withheld cell leaked: %+v", attr)
+		}
+	}
 }
 
 func (s *graphTableStub) Ontology() graphtable.Ontology {
-	return graphtable.Ontology{Table: "graph", SchemaID: "foreman.graph", Version: 3,
+	return graphtable.Ontology{Table: "graph", SchemaID: "foreman.graph", Version: 3, CellVisibility: s.cellVisibility,
 		Namespaces: []graphtable.OntologyNodeKind{{Name: "entity", RowPrefix: "ent:"}},
 		Edges:      []graphtable.OntologyEdge{{Name: "edge", ColumnFamily: "edge", Relationships: []string{"owns"}}}}
 }
 
 func (s *graphTableStub) Browse(_ context.Context, req graphtable.BrowseRequest) (graphtable.BrowsePage, error) {
 	s.last = "browse"
+	s.after = req.After
 	if s.invalid {
 		return graphtable.BrowsePage{}, graphtable.ErrInvalid
 	}
-	return graphtable.BrowsePage{Nodes: []graphtable.Node{{ID: "ent:service|api", Key: "service|api", Identifier: "api", Namespace: "entity", Kind: "service", Found: true, Attributes: []graphtable.Attribute{{Family: "service", Field: "name", Value: "API service"}}}}}, nil
+	return graphtable.BrowsePage{Nodes: []graphtable.Node{{ID: "ent:service|api", Key: "service|api", Identifier: "api", Namespace: "entity", Kind: "service", Found: true, Attributes: []graphtable.Attribute{{Family: "service", Field: "name", Value: "API service"}}}}, Next: s.next}, nil
 }
 
 func (s *graphTableStub) Nodes(_ context.Context, ids []string) ([]graphtable.Node, error) {
@@ -80,6 +134,10 @@ func (s *graphTableStub) Terms(_ context.Context, terms []string) ([]graphtable.
 }
 
 func graphTableFixture(t *testing.T, operations []auth.Operation, policies [][]byte) (*Handler, *graphTableStub) {
+	return graphTableFixtureCV(t, operations, policies, false)
+}
+
+func graphTableFixtureCV(t *testing.T, operations []auth.Operation, policies [][]byte, cv bool) (*Handler, *graphTableStub) {
 	t.Helper()
 	a := auth.NewAuthority()
 	d, e := auth.NewDecision(auth.DecisionConfig{Subject: "subject", Actor: "actor", AuthorizationDomain: []byte("domain"), AllowedOperations: operations, PermittedSourceIDs: [][]byte{[]byte("source")}, PermittedPolicyIDs: policies, PolicyGeneration: 1, AuthenticationExpires: time.Now().Add(time.Hour), RequestID: "request"})
@@ -95,7 +153,7 @@ func graphTableFixture(t *testing.T, operations []auth.Operation, policies [][]b
 	if e != nil {
 		t.Fatal(e)
 	}
-	stub := &graphTableStub{}
+	stub := &graphTableStub{cellVisibility: cv}
 	if e := h.MountGraphTable(GraphTableSurface{Resolver: a.Resolver(), Reader: stub, Label: "graph", LabelPolicyID: []byte("label-policy"), Stores: []GraphTableStore{{Name: "embedded", Address: "embedded"}}}); e != nil {
 		t.Fatal(e)
 	}
@@ -279,6 +337,32 @@ func TestGraphTableRoutesRefuseWhatTheyShould(t *testing.T) {
 	noLabel.ServeHTTP(w, graphTableRequest(http.MethodGet, "/api/v1/meta", ""))
 	if w.Code != http.StatusOK || strings.Contains(w.Body.String(), `"graph_table":true`) {
 		t.Fatalf("unlabeled meta = %d %s", w.Code, w.Body)
+	}
+}
+
+func TestGraphTableVisibilityBrowseCursorConcealsRow(t *testing.T) {
+	h, stub := graphTableFixtureCV(t, []auth.Operation{auth.OperationRead, auth.OperationNeighborhood}, [][]byte{[]byte("label-policy")}, true)
+	stub.next = "ent:hidden|record"
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, graphTableRequest(http.MethodPost, "/api/v1/graph-table/browse", `{"namespace":"entity","limit":2}`))
+	if w.Code != http.StatusOK || strings.Contains(w.Body.String(), stub.next) {
+		t.Fatalf("unconcealed cursor = %d %s", w.Code, w.Body)
+	}
+	var page struct {
+		Next string `json:"next"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &page); err != nil || page.Next == "" {
+		t.Fatalf("cursor response = %s, %v", w.Body, err)
+	}
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, graphTableRequest(http.MethodPost, "/api/v1/graph-table/browse", `{"namespace":"entity","limit":2,"after":"`+page.Next+`"}`))
+	if w.Code != http.StatusOK || stub.after != stub.next {
+		t.Fatalf("cursor roundtrip = %d %s, after %q", w.Code, w.Body, stub.after)
+	}
+	w = httptest.NewRecorder()
+	h.ServeHTTP(w, graphTableRequest(http.MethodPost, "/api/v1/graph-table/browse", `{"namespace":"entity","limit":2,"after":"tampered"}`))
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("tampered cursor = %d %s", w.Code, w.Body)
 	}
 }
 
