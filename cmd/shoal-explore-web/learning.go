@@ -17,6 +17,7 @@ import (
 	"github.com/phrocker/shoal-oss/internal/releasebundle"
 	"github.com/phrocker/shoal-oss/internal/storage/local"
 	"github.com/phrocker/shoal-oss/internal/weightsbundle"
+	decisionapi "github.com/phrocker/shoal-oss/pkg/decision/api"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
 	"github.com/phrocker/shoal-oss/pkg/explorer/webapi"
 	"github.com/phrocker/shoal-oss/pkg/model"
@@ -148,7 +149,16 @@ func parseImagePins(spec string) ([]releasebundle.ImageRef, error) {
 // mountLearning composes the file-backed learning service and mounts the
 // learning surface atomically. No cohort authority or exporter is wired by
 // the default binary, and the service says so rather than faking one.
-func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.Resolver, cfg learningHostConfig, output io.Writer) (io.Closer, error) {
+// learningMounts is what mountLearning composed, held so the operator inbox
+// can read candidates and class records through the same providers the
+// learning and class routes serve.
+type learningMounts struct {
+	io.Closer
+	learning decisionapi.LearningProvider
+	classes  decisionapi.ClassRecordProvider
+}
+
+func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.Resolver, cfg learningHostConfig, output io.Writer) (*learningMounts, error) {
 	images, err := parseImagePins(cfg.images)
 	if err != nil {
 		return nil, err
@@ -207,6 +217,7 @@ func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.R
 	var cohorts decisionlearning.CohortLister
 	var exporter decisionlearning.Exporter
 	var closer io.Closer = nopCloser{}
+	var classes decisionapi.ClassRecordProvider
 	if tasks, err := parseFixtureCohortTasks(cfg.fixtureCohorts); err != nil {
 		return nil, err
 	} else if len(tasks) > 0 {
@@ -229,7 +240,8 @@ func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.R
 		}
 		// The measured record of every decision class in a fixture cohort,
 		// aggregated from the class sample sealed beside the export.
-		if err := handler.MountDecisionClasses(fixtureClassProvider{fixtures}, resolver); err != nil {
+		classes = fixtureClassProvider{fixtures}
+		if err := handler.MountDecisionClasses(classes, resolver); err != nil {
 			fixtures.Close()
 			return nil, err
 		}
@@ -247,7 +259,7 @@ func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.R
 		closer.Close()
 		return nil, err
 	}
-	return closer, nil
+	return &learningMounts{Closer: closer, learning: service, classes: classes}, nil
 }
 
 type nopCloser struct{}

@@ -254,6 +254,12 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 			"to prepare as the Learning console's cohort authority and exporter. "+
 			"A finite synthetic census, regenerated on every start; never a "+
 			"repository sampling authority.")
+	inboxRecordWindow := flags.Duration(
+		"inbox-record-window", webapi.DefaultInboxRecordWindow,
+		"How far before now the window of the measured record beside an "+
+			"inbox candidate begins; it ends at the cohort's cutoff and the "+
+			"record states the window it was served for. The inbox is "+
+			"mounted whenever the approval or learning service is.")
 	studentDevice := flags.String(
 		"student-device", firstNonEmpty(os.Getenv("SHOAL_STUDENT_DEVICE"), "cpu"),
 		"Device the active release was promoted for; a runtime reporting "+
@@ -908,6 +914,7 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		listener.Close()
 		return err
 	}
+	var learning *learningMounts
 	if *learningStateDir != "" {
 		learningCloser, err := mountLearning(ctx, handler, authority.Resolver(), learningHostConfig{
 			stateDir: *learningStateDir, evidenceDir: *learningEvidenceDir,
@@ -922,6 +929,7 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 			return err
 		}
 		defer learningCloser.Close()
+		learning = learningCloser
 	}
 	if *graphTable != "" || *graphTableLabel != "" || *graphStores != "" {
 		graphCloser, err := mountGraphTable(ctx, handler, authority.Resolver(), graphTableHostConfig{
@@ -1103,6 +1111,18 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		if err := handler.MountAuthenticated(
 			webapi.FleetApprovalRoutePrefix, approvalHandler,
 		); err != nil {
+			listener.Close()
+			return err
+		}
+	}
+	// The operator inbox composes what the approval and learning services
+	// already serve; it is mounted whenever either is.
+	if opened.approvals != nil || learning != nil {
+		surface := webapi.InboxSurface{Resolver: authority.Resolver(), Approvals: opened.approvals, RecordWindow: *inboxRecordWindow}
+		if learning != nil {
+			surface.Learning, surface.Classes = learning.learning, learning.classes
+		}
+		if err := handler.MountInbox(surface); err != nil {
 			listener.Close()
 			return err
 		}

@@ -76,6 +76,7 @@ const (
 	CapabilityDatasets      Capability = "decision_datasets"
 	CapabilityOutcomes      Capability = "decision_outcomes"
 	CapabilityClasses       Capability = "decision_classes"
+	CapabilityInbox         Capability = "inbox"
 	CapabilityAdjudications Capability = "decision_adjudications"
 	CapabilityLearning      Capability = "decision_learning"
 	CapabilityGraphTable    Capability = "graph_table"
@@ -100,7 +101,10 @@ type Capabilities struct {
 	// Classes reports the measured record of decision classes at
 	// DecisionClassesRoute, a read over existing outcome and adjudication
 	// records.
-	Classes       bool `json:"decision_classes"`
+	Classes bool `json:"decision_classes"`
+	// Inbox reports the operator inbox at InboxRoute: what awaits a person
+	// on this host, composed from the providers above.
+	Inbox         bool `json:"inbox"`
 	Adjudications bool `json:"decision_adjudications"`
 	Learning      bool `json:"decision_learning"`
 	// GraphTable reports a described engine table visible to this decision
@@ -151,6 +155,8 @@ func (c Capabilities) Supports(capability Capability) bool {
 		return c.Outcomes
 	case CapabilityClasses:
 		return c.Classes
+	case CapabilityInbox:
+		return c.Inbox
 	case CapabilityAdjudications:
 		return c.Adjudications
 	case CapabilityLearning:
