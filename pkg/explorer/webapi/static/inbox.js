@@ -109,13 +109,8 @@ const inbox = (() => {
     facts.className = "inbox-facts";
     fact(facts, "Capability", record.capability);
     fact(facts, "Action", record.action);
-    fact(facts, "Agent", record.agent_id);
-    fact(facts, "Object", record.object_id);
-    fact(facts, "Requester", record.requester);
     fact(facts, "Requested", record.requested_at);
     fact(facts, "Expires", record.expires_at);
-    fact(facts, "Request digest", record.request_digest);
-    fact(facts, "Policy generation", record.policy_generation);
     detail.append(heading, stateText, facts);
     if (record.input !== undefined) {
       const input = document.createElement("details");

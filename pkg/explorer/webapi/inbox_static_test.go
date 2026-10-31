@@ -17,6 +17,9 @@ func TestStaticWorkspaceMountsApprovalInbox(t *testing.T) {
 			t.Fatalf("inbox HTML missing %s", id)
 		}
 	}
+	if strings.Index(index, `/assets/inbox.js`) > strings.Index(index, `/assets/app.js`) {
+		t.Fatal("inbox must initialize before the app applies capabilities")
+	}
 	app := readStaticAsset(t, "static/app.js")
 	if !strings.Contains(app, `capability("fleet_approvals")`) ||
 		!strings.Contains(app, `activate("inbox")`) {
