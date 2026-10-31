@@ -202,8 +202,8 @@ func classRecordsToAPI(r decisiondatasets.Records) decisionapi.ClassRecords {
 	out := decisionapi.ClassRecords{CohortID: r.CohortID, TaskID: r.TaskID, QuestionID: r.QuestionID, PolicyID: r.PolicyID, Cutoff: r.Cutoff, From: r.Window.From, To: r.Window.To, Members: r.Members, InWindow: r.InWindow, Outside: r.Outside}
 	for _, c := range r.Classes {
 		rec := decisionapi.ClassRecord{ClassID: c.ClassID, Class: c.Class, Targets: c.Targets, FirstObserved: c.FirstObserved, LastObserved: c.LastObserved}
-		rec.Adjudication = decisionapi.ClassAdjudication{VerifiedAgree: c.Adjudication.VerifiedAgree, VerifiedDisagree: c.Adjudication.VerifiedDisagree, Disputed: c.Adjudication.Disputed, Unresolved: c.Adjudication.Unresolved, None: c.Adjudication.None, Withdrawn: c.Adjudication.Withdrawn, Stale: c.Adjudication.Stale, Later: c.Adjudication.Later}
-		rec.Outcomes = decisionapi.ClassOutcomes{Receipts: c.Outcomes.Receipts, Execution: c.Outcomes.Execution, Correctness: c.Outcomes.Correctness, Superseded: c.Outcomes.Superseded}
+		rec.Adjudication = decisionapi.ClassAdjudication{VerifiedAgree: c.Adjudication.VerifiedAgree, VerifiedDisagree: c.Adjudication.VerifiedDisagree, Disputed: c.Adjudication.Disputed, Unresolved: c.Adjudication.Unresolved, None: c.Adjudication.None, Withdrawn: c.Adjudication.Withdrawn, Stale: c.Adjudication.Stale, Later: c.Adjudication.Later, TrainingDenied: c.Adjudication.TrainingDenied}
+		rec.Outcomes = decisionapi.ClassOutcomes{Receipts: c.Outcomes.Receipts, Correctness: c.Outcomes.Correctness, Superseded: c.Outcomes.Superseded}
 		if c.Precision != nil {
 			v := *c.Precision
 			rec.Precision = &v

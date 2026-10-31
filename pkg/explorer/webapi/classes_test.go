@@ -173,14 +173,23 @@ func TestClassHTTPProviderErrorsAndSubstitutions(t *testing.T) {
 		}
 	}
 	for name, change := range map[string]func(*classHTTPStub){
-		"cohort":  func(p *classHTTPStub) { p.reply = classHTTPReply("other") },
-		"window":  func(p *classHTTPStub) { p.reply.To = classHTTPNow.Add(-time.Minute); p.reply.Cutoff = p.reply.To },
+		"cohort": func(p *classHTTPStub) { p.reply = classHTTPReply("other") },
+		"window": func(p *classHTTPStub) { p.reply.To = classHTTPNow.Add(-time.Minute); p.reply.Cutoff = p.reply.To },
+		"open-ended window not at the cutoff": func(p *classHTTPStub) {
+			p.reply.To = classHTTPNow.Add(-time.Minute)
+			p.reply.Classes[0].FirstObserved, p.reply.Classes[0].LastObserved = p.reply.To, p.reply.To
+		},
 		"invalid": func(p *classHTTPStub) { p.reply.InWindow = 5 },
 	} {
 		h, p, _, _ := classHTTPFixture(t)
 		change(p)
+		r := classHTTPRequest()
+		if strings.HasPrefix(name, "open-ended") {
+			b, _ := decisionapi.EncodeClassRecordRequest(decisionapi.ClassRecordRequest{CohortID: "cohort", From: classHTTPNow.Add(-time.Hour)})
+			r.Body = ioNopString(string(b))
+		}
 		w := httptest.NewRecorder()
-		h.ServeHTTP(w, classHTTPRequest())
+		h.ServeHTTP(w, r)
 		if w.Code != 503 || strings.Contains(w.Body.String(), "classes") {
 			t.Fatalf("%s: substituted or invalid provider result disclosed: %d %s", name, w.Code, w.Body.String())
 		}

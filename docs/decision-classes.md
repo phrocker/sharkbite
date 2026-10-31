@@ -58,17 +58,21 @@ The record of each class with a target observed in the window:
 | `adjudication.verified_agree` | The adjudication in force at the cutoff is verified and its label is the predicted label. |
 | `adjudication.verified_disagree` | Verified with a different label, or verified for an abstention. |
 | `adjudication.disputed`, `adjudication.unresolved`, `adjudication.none` | The disposition in force, or no adjudication at the cutoff. These stay in the denominator. |
-| `adjudication.withdrawn`, `adjudication.stale` | Qualifiers: a verified label the authority withdrew, or whose basis did not cover the outcome inventory, is counted as unresolved, exactly as an export quarantines it. |
-| `adjudication.later` | An adjudication received after the cutoff exists. It is counted, never applied. |
-| `outcomes.receipts` | Outcome receipts in the inventory. |
-| `outcomes.execution`, `outcomes.correctness`, `outcomes.superseded` | Receipts in the selected adjudication's basis by kind; a superseded receipt is counted once, under its successor. |
+| `adjudication.withdrawn`, `adjudication.stale`, `adjudication.later`, `adjudication.training_denied` | Qualifiers, each a condition under which an export withholds a verified label: the authority withdrew it, the selected adjudication's basis does not match the outcome inventory, an adjudication was received after the cutoff, or the pinned policy does not permit the label for training. A verified label under any of them is counted as unresolved. The record never applies a label an export would null. |
+| `outcomes.receipts` | Outcome receipts in the inventory, of every kind. |
+| `outcomes.correctness`, `outcomes.superseded` | Correctness receipts in the selected adjudication's basis, a superseded receipt counted once under its successor. A basis carries only correctness receipts, so execution receipts appear in `receipts` and nowhere else; their status is not read in this slice. |
 | `precision` | `verified_agree / (verified_agree + verified_disagree)`, or null when nothing is verified. It says nothing about the unverified share, which `targets` and the adjudication counts report. |
 | `first_observed`, `last_observed` | The span of evidence observation inside the window. |
 
 The response states the cohort, cutoff, window, the members in and outside
 the window, and every class sorted by identity. Outcome receipt contents are
-not read in this slice; "acted on" in the sense of an execution receipt is
-counted by kind, not by status.
+not read in this slice, so "acted on" in the sense of an execution receipt's
+status is not yet in the record; the inventory count is. A prediction that
+failed decided nothing and is in no class; a cohort holding one has no
+record, as it has no export.
+
+A basis that cites a receipt the inventory no longer holds is counted as
+stale rather than refused, exactly as the export marks that row.
 
 ## Route
 

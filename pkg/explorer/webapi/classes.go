@@ -189,7 +189,8 @@ func (h *classHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		classWireError(w, e)
 		return
 	}
-	if result.CohortID != req.CohortID || !result.From.Equal(req.From) || (!req.To.IsZero() && !result.To.Equal(req.To)) {
+	// An open-ended window ends at the cohort cutoff and nowhere else.
+	if result.CohortID != req.CohortID || !result.From.Equal(req.From) || (!req.To.IsZero() && !result.To.Equal(req.To)) || (req.To.IsZero() && !result.To.Equal(result.Cutoff)) {
 		classWireError(w, errors.New("substituted provider cohort or window"))
 		return
 	}

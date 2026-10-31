@@ -37,13 +37,14 @@ type ClassAdjudication struct {
 	Withdrawn        int `json:"withdrawn"`
 	Stale            int `json:"stale"`
 	Later            int `json:"later"`
+	TrainingDenied   int `json:"training_denied"`
 }
 
-// ClassOutcomes counts the outcome inventory and the basis receipts by kind,
-// a superseded receipt counted once under its successor.
+// ClassOutcomes counts the outcome inventory and the selected basis's
+// correctness receipts, a superseded receipt counted once under its
+// successor. A basis carries only correctness receipts.
 type ClassOutcomes struct {
 	Receipts    int `json:"receipts"`
-	Execution   int `json:"execution"`
 	Correctness int `json:"correctness"`
 	Superseded  int `json:"superseded"`
 }
@@ -78,9 +79,9 @@ type ClassRecordProvider interface {
 }
 
 type classRequestWire struct {
-	CohortID string `json:"cohort_id"`
-	From     string `json:"from"`
-	To       string `json:"to,omitempty"`
+	CohortID string  `json:"cohort_id"`
+	From     string  `json:"from"`
+	To       *string `json:"to,omitempty"`
 }
 type classWire struct {
 	ID         string `json:"class_id"`
@@ -135,14 +136,14 @@ func (r ClassRecordRequest) Validate() error {
 	}
 	return nil
 }
-func optionalClassStamp(t time.Time) string {
-	if t.IsZero() {
+func deref(s *string) string {
+	if s == nil {
 		return ""
 	}
-	return classStamp(t)
+	return *s
 }
-func parseOptionalClassStamp(s string) (time.Time, error) {
-	if s == "" {
+func parseOptionalClassStamp(s string, present bool) (time.Time, error) {
+	if !present {
 		return time.Time{}, nil
 	}
 	return parseClassStamp(s)
@@ -151,7 +152,12 @@ func EncodeClassRecordRequest(r ClassRecordRequest) ([]byte, error) {
 	if err := r.Validate(); err != nil {
 		return nil, err
 	}
-	b, err := json.Marshal(classRequestWire{EncodeID(r.CohortID), classStamp(r.From), optionalClassStamp(r.To)})
+	w := classRequestWire{CohortID: EncodeID(r.CohortID), From: classStamp(r.From)}
+	if !r.To.IsZero() {
+		to := classStamp(r.To)
+		w.To = &to
+	}
+	b, err := json.Marshal(w)
 	if err != nil {
 		return nil, classInvalid()
 	}
@@ -174,7 +180,7 @@ func DecodeClassRecordRequest(raw []byte) (ClassRecordRequest, error) {
 	if err != nil {
 		return out, err
 	}
-	to, err := parseOptionalClassStamp(w.To)
+	to, err := parseOptionalClassStamp(deref(w.To), w.To != nil)
 	if err != nil {
 		return out, err
 	}
@@ -191,13 +197,17 @@ func (r ClassRecord) validate(records ClassRecords) error {
 		return classInvalid()
 	}
 	a, o := r.Adjudication, r.Outcomes
-	counts := []int{r.Targets, a.VerifiedAgree, a.VerifiedDisagree, a.Disputed, a.Unresolved, a.None, a.Withdrawn, a.Stale, a.Later, o.Receipts, o.Execution, o.Correctness, o.Superseded}
+	counts := []int{r.Targets, a.VerifiedAgree, a.VerifiedDisagree, a.Disputed, a.Unresolved, a.None, a.Withdrawn, a.Stale, a.Later, a.TrainingDenied, o.Receipts, o.Correctness, o.Superseded}
 	for _, n := range counts {
 		if n < 0 {
 			return classInvalid()
 		}
 	}
-	if r.Targets < 1 || a.VerifiedAgree+a.VerifiedDisagree+a.Disputed+a.Unresolved+a.None != r.Targets || a.Withdrawn > r.Targets || a.Stale > r.Targets || a.Later > r.Targets {
+	// Stale and Later qualify adjudicated targets only; a qualified verified
+	// label was demoted, so none of the qualifiers exceeds the adjudicated
+	// targets and the correctness receipts never exceed the inventory.
+	adjudicated := r.Targets - a.None
+	if r.Targets < 1 || a.VerifiedAgree+a.VerifiedDisagree+a.Disputed+a.Unresolved+a.None != r.Targets || a.Withdrawn > r.Targets || a.TrainingDenied > r.Targets || a.Stale > adjudicated || a.Later > adjudicated || o.Correctness+o.Superseded > o.Receipts {
 		return classInvalid()
 	}
 	verified := a.VerifiedAgree + a.VerifiedDisagree

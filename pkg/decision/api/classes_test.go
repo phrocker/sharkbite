@@ -42,6 +42,11 @@ func TestClassRecordsRoundTripAndValidation(t *testing.T) {
 		"window past cutoff":  func(r *ClassRecords) { r.To = r.Cutoff.Add(time.Second) },
 		"observation outside": func(r *ClassRecords) { r.Classes[0].LastObserved = r.To.Add(time.Second) },
 		"negative":            func(r *ClassRecords) { r.Outside = -1; r.Members = 1 },
+		"stale beyond adjudicated": func(r *ClassRecords) {
+			r.Classes[0].Adjudication = ClassAdjudication{None: 2, Stale: 1}
+			r.Classes[0].Precision = nil
+		},
+		"basis beyond inventory": func(r *ClassRecords) { r.Classes[0].Outcomes.Correctness = 3 },
 	} {
 		bad := classRecordsFixture(t)
 		change(&bad)
@@ -80,6 +85,8 @@ func TestClassRecordRequestCodec(t *testing.T) {
 		`{"cohort_id":"Y29ob3J0","from":"2026-10-06T12:00:00+01:00","to":"2026-10-06T12:00:00Z"}`,
 		`{"cohort_id":"bad=","from":"2026-10-06T11:00:00Z","to":"2026-10-06T12:00:00Z"}`,
 		`{"cohort_id":"Y29ob3J0","from":"2026-10-06T11:00:00Z","to":"2026-10-06T12:00:00Z","x":1}`,
+		`{"cohort_id":"Y29ob3J0","from":"2026-10-06T11:00:00Z","to":""}`,
+		`{"cohort_id":"Y29ob3J0","from":"2026-10-06T11:00:00Z","to":null}`,
 	} {
 		if _, err := DecodeClassRecordRequest([]byte(raw)); err == nil {
 			t.Fatalf("decoded %s", raw)

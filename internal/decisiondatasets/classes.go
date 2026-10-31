@@ -47,14 +47,16 @@ type SampleRow struct {
 	// VerifiedLabel is set only when Status is verified.
 	Status        string
 	VerifiedLabel string
-	// Later reports an adjudication received after the cutoff, which the
-	// record counts but never applies. Withdrawn reports a label the
-	// authority has withdrawn, and Stale an outcome inventory the selected
-	// adjudication's basis did not cover; both are counted as unresolved,
-	// exactly as an export quarantines them.
-	Later, Withdrawn, Stale bool
-	OutcomeReceipts         int
-	BasisOutcomes           []SampleOutcome
+	// These qualifiers are the conditions under which an export withholds a
+	// verified label, and the sample demotes the same label to unresolved:
+	// Withdrawn, a label the authority withdrew; Stale, an outcome inventory
+	// the selected adjudication's basis does not match; Later, an
+	// adjudication received after the cutoff; TrainingDenied, a label the
+	// pinned policy does not permit for training. A record never applies a
+	// label an export would null.
+	Later, Withdrawn, Stale, TrainingDenied bool
+	OutcomeReceipts                         int
+	BasisOutcomes                           []SampleOutcome
 }
 
 // Sample is the complete validated per-target material of one cohort.
@@ -73,13 +75,15 @@ type Window struct{ From, To time.Time }
 // Adjudication counts the adjudication in force at the cutoff for each target.
 type Adjudication struct {
 	VerifiedAgree, VerifiedDisagree, Disputed, Unresolved, None int
-	Withdrawn, Stale, Later                                     int
+	Withdrawn, Stale, Later, TrainingDenied                     int
 }
 
-// Outcomes counts the outcome inventory and the selected bases' receipts by
-// kind, superseded receipts excluded.
+// Outcomes counts the outcome inventory and the selected bases' correctness
+// receipts, a superseded receipt counted once under its successor. A basis
+// carries only correctness receipts (NewAdjudicationBasis refuses any
+// other kind), so execution receipts are in Receipts and nowhere else.
 type Outcomes struct {
-	Receipts, Execution, Correctness, Superseded int
+	Receipts, Correctness, Superseded int
 }
 
 // ClassRecord is the measured record of one decision class over a window.
@@ -109,9 +113,14 @@ type Records struct {
 func predictedClass(c Cohort, m Member, p decision.PredictionRecord, labels []string) (decision.DecisionClass, error) {
 	class := decision.DecisionClass{TaskID: c.Task.ID(), QuestionID: c.QuestionID, PolicyID: c.Policy.ID()}
 	cfg := p.Config()
-	if cfg.Status != decision.Completed {
+	switch cfg.Status {
+	case decision.Completed:
+	case decision.Abstained:
 		class.Abstained = true
 		return class, nil
+	default:
+		// A failed prediction decided nothing; it is in no class.
+		return class, denied()
 	}
 	found := false
 	for _, a := range cfg.Answers {
@@ -182,7 +191,7 @@ func sampleRow(c Cohort, m Member, t Target, labels []string, now time.Time) (Sa
 	if e != nil {
 		return zero, e
 	}
-	row := SampleRow{MemberID: m.ID, TargetID: target, Class: class, ObservedAt: observed.UTC(), Status: StatusNone, OutcomeReceipts: len(t.OutcomeReceiptIDs), Withdrawn: t.LabelWithdrawn}
+	row := SampleRow{MemberID: m.ID, TargetID: target, Class: class, ObservedAt: observed.UTC(), Status: StatusNone, OutcomeReceipts: len(t.OutcomeReceiptIDs), Withdrawn: t.LabelWithdrawn, TrainingDenied: !t.TrainingAllowed}
 	if selected < 0 {
 		return row, nil
 	}
@@ -209,14 +218,13 @@ func sampleRow(c Cohort, m Member, t Target, labels []string, now time.Time) (Sa
 	}
 	inventory := []shoal.ID{}
 	for _, o := range b.Config().Outcomes {
-		if !seen[o.ReceiptID] {
-			return zero, denied()
-		}
 		inventory = append(inventory, o.ReceiptID)
 		row.BasisOutcomes = append(row.BasisOutcomes, SampleOutcome{ReceiptID: o.ReceiptID, Kind: o.Kind, Supersedes: o.Supersedes})
 	}
+	// A basis that does not match the inventory, in either direction, is
+	// stale: the export quarantines the row rather than refusing it.
 	row.Stale = !idsEqual(inventory, t.OutcomeReceiptIDs)
-	if (t.LabelWithdrawn || row.Stale) && row.Status == StatusVerified {
+	if (row.Withdrawn || row.Stale || row.Later || row.TrainingDenied) && row.Status == StatusVerified {
 		row.Status, row.VerifiedLabel = StatusUnresolved, ""
 	}
 	return row, nil
@@ -327,6 +335,9 @@ func Aggregate(sample Sample, w Window) (Records, error) {
 		}
 		switch row.Status {
 		case StatusVerified:
+			if row.Withdrawn || row.Stale || row.Later || row.TrainingDenied {
+				return zero, shoal.NewError(shoal.ErrorInvalidArgument, "invalid class sample")
+			}
 			if row.Class.Abstained || row.VerifiedLabel != row.Class.Label {
 				rec.Adjudication.VerifiedDisagree++
 			} else {
@@ -350,6 +361,9 @@ func Aggregate(sample Sample, w Window) (Records, error) {
 		if row.Later {
 			rec.Adjudication.Later++
 		}
+		if row.TrainingDenied {
+			rec.Adjudication.TrainingDenied++
+		}
 		rec.Outcomes.Receipts += row.OutcomeReceipts
 		superseded := map[shoal.ID]bool{}
 		for _, o := range row.BasisOutcomes {
@@ -362,14 +376,10 @@ func Aggregate(sample Sample, w Window) (Records, error) {
 				rec.Outcomes.Superseded++
 				continue
 			}
-			switch o.Kind {
-			case decision.OutcomeExecution:
-				rec.Outcomes.Execution++
-			case decision.OutcomeCorrectness:
-				rec.Outcomes.Correctness++
-			default:
+			if o.Kind != decision.OutcomeCorrectness {
 				return zero, shoal.NewError(shoal.ErrorInvalidArgument, "invalid class sample")
 			}
+			rec.Outcomes.Correctness++
 		}
 	}
 	for _, rec := range byID {

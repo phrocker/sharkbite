@@ -104,6 +104,8 @@ func TestClassRecordKeepsUnknownInTheDenominator(t *testing.T) {
 		{"new report after the basis", func(v *Target) {
 			v.OutcomeReceiptIDs = append(v.OutcomeReceiptIDs, shoal.ID("outcome-receipt:"+strings.Repeat("d", 64)))
 		}, func(x Adjudication) bool { return x.Unresolved == 1 && x.Stale == 1 && x.VerifiedAgree == 0 }},
+		{"basis cites a receipt the inventory lost", func(v *Target) { v.OutcomeReceiptIDs = nil }, func(x Adjudication) bool { return x.Unresolved == 1 && x.Stale == 1 && x.VerifiedAgree == 0 }},
+		{"training denied", func(v *Target) { v.TrainingAllowed = false }, func(x Adjudication) bool { return x.Unresolved == 1 && x.TrainingDenied == 1 && x.VerifiedAgree == 0 }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			s, a, ctx := exportFixture(t)
@@ -180,8 +182,67 @@ func TestClassRecordCountsALaterAdjudicationWithoutApplyingIt(t *testing.T) {
 		t.Fatal(e)
 	}
 	_, rec := oneClass(t, s2, a, ctx)
-	if rec.Adjudication.VerifiedAgree != 1 || rec.Adjudication.Later != 1 || rec.Adjudication.Disputed != 0 {
+	// The export nulls a label with a later adjudication; so does the record.
+	if rec.Adjudication.VerifiedAgree != 0 || rec.Adjudication.Unresolved != 1 || rec.Adjudication.Later != 1 || rec.Adjudication.Disputed != 0 || rec.Precision != nil {
 		t.Fatalf("%+v", rec.Adjudication)
+	}
+}
+
+// Every condition under which the export withholds a verified label is a
+// condition under which the record withholds it: the two never disagree
+// about a label.
+func TestClassRecordNeverAppliesALabelTheExportWithholds(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		change func(*Target)
+	}{
+		{"withdrawn", func(v *Target) { v.LabelWithdrawn = true }},
+		{"training denied", func(v *Target) { v.TrainingAllowed = false }},
+		{"stale inventory", func(v *Target) {
+			v.OutcomeReceiptIDs = append(v.OutcomeReceiptIDs, shoal.ID("outcome-receipt:"+strings.Repeat("d", 64)))
+		}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s, a, ctx := exportFixture(t)
+			tc.change(&a.targets[0])
+			bundle, e := s.Export(ctx, a.cohort.ID)
+			if e != nil {
+				t.Fatal(e)
+			}
+			row := datasetRow(t, bundle)
+			_, rec := oneClass(t, s, a, ctx)
+			exportLabel := row["label"] != nil
+			recordLabel := rec.Adjudication.VerifiedAgree+rec.Adjudication.VerifiedDisagree > 0
+			if exportLabel != recordLabel || recordLabel {
+				t.Fatalf("export label=%v record verified=%v", exportLabel, recordLabel)
+			}
+		})
+	}
+}
+
+func TestClassSampleRefusesAFailedPrediction(t *testing.T) {
+	s, a, ctx := exportFixture(t)
+	target := &a.targets[0]
+	r := target.Prediction.Request()
+	p, e := decision.NewPredictionRecord(r, decision.ResultConfig{RequestID: r.ID(), PredictorID: r.PredictorID(), EffectiveDevice: "cpu", Status: decision.Failed, Reason: "predictor timed out", CompletedAt: r.Config().RequestedAt})
+	if e != nil {
+		t.Fatal(e)
+	}
+	target.Prediction, target.History, target.SelectedBasis = p, nil, decision.AdjudicationBasis{}
+	a.cohort.Members[0].PredictionID = p.ID()
+	if _, e := s.ClassSample(ctx, a.cohort.ID); e == nil {
+		t.Fatal("a failed prediction was placed in a class")
+	}
+	// A verified row carrying a qualifier is not a sample the service makes.
+	forged := Sample{CohortID: "cohort", TaskID: "task", QuestionID: "q", PolicyID: "policy", Labels: []string{"a", "b"}, Cutoff: time.Date(2026, 10, 6, 12, 0, 0, 0, time.UTC)}
+	forged.Rows = []SampleRow{{MemberID: "m", TargetID: "t", Class: decision.DecisionClass{TaskID: "task", QuestionID: "q", PolicyID: "policy", Label: "a"}, ObservedAt: forged.Cutoff, Status: StatusVerified, VerifiedLabel: "a", Later: true}}
+	if _, e := Aggregate(forged, Window{From: forged.Cutoff, To: forged.Cutoff}); e == nil {
+		t.Fatal("a qualified verified row aggregated as verified")
+	}
+	forged.Rows[0].Later = false
+	forged.Rows[0].BasisOutcomes = []SampleOutcome{{ReceiptID: "outcome-receipt:x", Kind: decision.OutcomeExecution}}
+	if _, e := Aggregate(forged, Window{From: forged.Cutoff, To: forged.Cutoff}); e == nil {
+		t.Fatal("an execution receipt in a basis aggregated")
 	}
 }
 
@@ -243,7 +304,6 @@ func TestClassSampleRefusesWhatAnExportRefuses(t *testing.T) {
 		{"source unavailable", func(a *exportAuthority) { a.targets[0].SourceAvailable = false }},
 		{"inventory incomplete", func(a *exportAuthority) { a.targets[0].InventoryComplete = false }},
 		{"prediction substituted", func(a *exportAuthority) { a.cohort.Members[0].PredictionID = "other" }},
-		{"basis outside inventory", func(a *exportAuthority) { a.targets[0].OutcomeReceiptIDs = nil }},
 		{"unknown cohort", func(a *exportAuthority) { a.cohort.ID = "other" }},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

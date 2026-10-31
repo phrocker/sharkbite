@@ -177,8 +177,14 @@
     if (!match) throw new Error("times must be YYYY-MM-DDTHH:MM[:SS]");
     const [, y, mo, d, h, mi, sec] = match;
     const t = Date.UTC(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(sec || 0));
-    if (Number.isNaN(t)) throw new Error("invalid time");
-    return new Date(t).toISOString().replace(/\.000Z$/, "Z");
+    const date = new Date(t);
+    // Date.UTC rolls an out-of-range field over into the next one; a time
+    // that does not read back as written is refused, not reinterpreted.
+    const same = !Number.isNaN(t) && date.getUTCFullYear() === Number(y) && date.getUTCMonth() + 1 === Number(mo)
+      && date.getUTCDate() === Number(d) && date.getUTCHours() === Number(h) && date.getUTCMinutes() === Number(mi)
+      && date.getUTCSeconds() === Number(sec || 0);
+    if (!same) throw new Error("invalid time: a field is out of range");
+    return date.toISOString().replace(/\.000Z$/, "Z");
   }
 
   function renderClassRecords(records) {
@@ -191,7 +197,7 @@
     summary.appendChild(head);
     const table = document.createElement("table");
     const header = document.createElement("tr");
-    for (const name of ["class", "label", "targets", "verified agree", "verified disagree", "disputed", "unresolved", "none", "precision", "withdrawn / stale / later", "outcome receipts", "observed"]) {
+    for (const name of ["class", "label", "targets", "verified agree", "verified disagree", "disputed", "unresolved", "none", "precision", "withdrawn / stale / later / training denied", "outcome receipts", "observed"]) {
       const th = document.createElement("th");
       th.textContent = name;
       header.appendChild(th);
@@ -205,7 +211,7 @@
         row.class.class_id, row.class.abstained ? "(abstained)" : row.class.label, row.targets,
         a.verified_agree, a.verified_disagree, a.disputed, a.unresolved, a.none,
         row.precision === null || row.precision === undefined ? "n/a" : row.precision.toFixed(3),
-        `${a.withdrawn} / ${a.stale} / ${a.later}`, `${o.receipts} (${o.correctness} correctness, ${o.execution} execution, ${o.superseded} superseded)`,
+        `${a.withdrawn} / ${a.stale} / ${a.later} / ${a.training_denied}`, `${o.receipts} (${o.correctness} correctness in basis, ${o.superseded} superseded)`,
         `${row.first_observed} to ${row.last_observed}`,
       ]) {
         const td = document.createElement("td");

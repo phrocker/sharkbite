@@ -59,7 +59,7 @@ discipline as the [offline release bundle](offline-release-bundle.md):
 | --- | --- | --- |
 | Executable decision | A predicate over observations plus an action with declared effects | No. Decisions are answers to questions over a context pack; see [Observations and predicates](#observations-and-predicates) |
 | Evidence | The picture pinned to snapshot and revision, with the adjudication receipts that shaped the class | Yes: `pkg/decision` picture manifests, prediction, outcome, and adjudication records |
-| Measured record | Acted on versus dismissed in shadow, unknown and disputed kept in the denominator, sample size, window, cohort | [Decision classes](decision-classes.md): class identity and the record over a cohort and window (#218); outcome statuses are counted by kind, not yet read |
+| Measured record | Acted on versus dismissed in shadow, unknown and disputed kept in the denominator, sample size, window, cohort | [Decision classes](decision-classes.md): class identity and the record over a cohort and window (#218); execution receipt statuses are not yet read |
 | Approval | Who, when, and the policy under which the decision may run unattended | Enforcement side: fleet approvals and `Effects` in `pkg/explorer/fleet` |
 | Executor and replay | A deterministic evaluator, and a harness that runs the bundle against the customer's own history before it is enabled | `cmd/shoal-frozen-code-replay` has the shape for one frozen predictor; a rule needs the same shape (#221) |
 | Digests | A SHA-256 on every entry; import verifies before anything is read | Yes, for the weights and release bundles |
