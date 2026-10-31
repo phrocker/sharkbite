@@ -158,3 +158,47 @@ func TestStaticWorkspaceMountsGraphTableSource(t *testing.T) {
 		}
 	}
 }
+
+func TestStaticWorkspaceMountsOperatorInbox(t *testing.T) {
+	index := readStaticAsset(t, "static/index.html")
+	for _, id := range []string{
+		`id="tab-inbox"`,
+		`id="inbox" class="panel inbox-panel"`,
+		`id="inbox-refresh"`,
+		`id="inbox-approvals-list"`,
+		`id="inbox-candidates-list"`,
+		`/assets/inbox.js`,
+		`Nothing here decides itself`,
+	} {
+		if !strings.Contains(index, id) {
+			t.Fatalf("inbox HTML missing %s", id)
+		}
+	}
+	// The inbox tab is the first tab: the front door when the host mounts it.
+	if strings.Index(index, `id="tab-inbox"`) > strings.Index(index, `id="tab-chat"`) {
+		t.Fatal("inbox is not the first tab")
+	}
+	script := readStaticAsset(t, "static/inbox.js")
+	for _, required := range []string{
+		`/api/v1/inbox`,
+		`/api/v1/fleet/approvals/`,
+		`/status`,
+		`/decide`,
+		`/api/v1/fleet/agents/`,
+		`/api/v1/learning/releases/promote`,
+		`request_digest`,
+		`policy_generation`,
+		`reload the inbox before deciding`,
+		`explorer:view`,
+	} {
+		if !strings.Contains(script, required) {
+			t.Fatalf("inbox script missing %q", required)
+		}
+	}
+	app := readStaticAsset(t, "static/app.js")
+	for _, required := range []string{`inbox: false`, `function applyInboxCapability`, `activate("inbox")`, `"view-inbox"`} {
+		if !strings.Contains(app, required) {
+			t.Fatalf("app.js missing %q", required)
+		}
+	}
+}

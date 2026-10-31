@@ -44,7 +44,23 @@
       <section><h2>Hierarchy</h2><p id="hierarchy-status" class="muted" role="status" aria-live="polite">Select a document.</p><div id="hierarchy" class="tree"></div></section>
     </aside>
     <section class="center">
-      <div class="tabs" role="tablist" aria-label="Explorer views"><button id="tab-chat" class="tab" data-panel="chat" role="tab" aria-controls="chat" aria-selected="false" tabindex="-1" type="button">Chat</button><button id="tab-evidence" class="tab active" data-panel="evidence" role="tab" aria-controls="evidence" aria-selected="true" type="button">Evidence</button><button id="tab-team" class="tab" data-panel="team" role="tab" aria-controls="team" aria-selected="false" tabindex="-1" type="button">Team</button><button id="tab-decisions" class="tab" data-panel="decisions" role="tab" aria-controls="decisions" aria-selected="false" tabindex="-1" type="button">Decisions</button><button id="tab-learning" class="tab" data-panel="learning" role="tab" aria-controls="learning" aria-selected="false" tabindex="-1" type="button">Learning</button><button id="tab-graph" class="tab" data-panel="graph" role="tab" aria-controls="graph" aria-selected="false" tabindex="-1" type="button">Graph</button><button id="tab-ontology" class="tab" data-panel="ontology" role="tab" aria-controls="ontology" aria-selected="false" tabindex="-1" type="button">Ontology</button></div>
+      <div class="tabs" role="tablist" aria-label="Explorer views"><button id="tab-inbox" class="tab" data-panel="inbox" role="tab" aria-controls="inbox" aria-selected="false" tabindex="-1" type="button">Inbox</button><button id="tab-chat" class="tab" data-panel="chat" role="tab" aria-controls="chat" aria-selected="false" tabindex="-1" type="button">Chat</button><button id="tab-evidence" class="tab active" data-panel="evidence" role="tab" aria-controls="evidence" aria-selected="true" type="button">Evidence</button><button id="tab-team" class="tab" data-panel="team" role="tab" aria-controls="team" aria-selected="false" tabindex="-1" type="button">Team</button><button id="tab-decisions" class="tab" data-panel="decisions" role="tab" aria-controls="decisions" aria-selected="false" tabindex="-1" type="button">Decisions</button><button id="tab-learning" class="tab" data-panel="learning" role="tab" aria-controls="learning" aria-selected="false" tabindex="-1" type="button">Learning</button><button id="tab-graph" class="tab" data-panel="graph" role="tab" aria-controls="graph" aria-selected="false" tabindex="-1" type="button">Graph</button><button id="tab-ontology" class="tab" data-panel="ontology" role="tab" aria-controls="ontology" aria-selected="false" tabindex="-1" type="button">Ontology</button></div>
+      <div id="inbox" class="panel inbox-panel" role="tabpanel" aria-labelledby="tab-inbox">
+        <div class="panel-intro"><span class="graph-eyebrow">OPERATE</span><h1>Inbox</h1><p>What is awaiting you on this host: held requests you may decide and candidates awaiting promotion, each with the chain that justifies it and the one action it needs. Nothing here decides itself; every action posts to the route that already governs it.</p></div>
+        <div class="button-row"><button id="inbox-refresh" type="button">Refresh</button></div>
+        <p id="inbox-status" class="muted" role="status" aria-live="polite">Open the inbox to load what awaits you.</p>
+        <section class="inbox-section" aria-labelledby="inbox-approvals-heading">
+          <h2 id="inbox-approvals-heading">Held requests awaiting a decision</h2>
+          <p id="inbox-approvals-note" class="muted"></p>
+          <div id="inbox-approvals-list" class="inbox-list"></div>
+        </section>
+        <section class="inbox-section" aria-labelledby="inbox-candidates-heading">
+          <h2 id="inbox-candidates-heading">Candidates awaiting promotion</h2>
+          <p id="inbox-candidates-note" class="muted"></p>
+          <div id="inbox-candidates-list" class="inbox-list"></div>
+        </section>
+        <pre id="inbox-output" class="decision-output" aria-live="polite"></pre>
+      </div>
       <div id="chat" class="panel" role="tabpanel" aria-labelledby="tab-chat">
         <div class="panel-intro"><span class="graph-eyebrow">GOVERNED ANSWERS</span><h1>Ask the workspace</h1><p>Answers use authorized evidence and are recorded after verification.</p></div>
         <form id="chat-form" class="stack">
@@ -456,5 +472,6 @@
   <script src="/assets/decision-console.js"></script>
   <script src="/assets/learning-console.js"></script>
   <script src="/assets/graph-table.js"></script>
+  <script src="/assets/inbox.js"></script>
 </body>
 </html>

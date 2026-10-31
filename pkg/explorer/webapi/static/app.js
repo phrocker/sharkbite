@@ -35,6 +35,7 @@ const state = {
     decision_datasets: false,
     decision_outcomes: false,
     decision_classes: false,
+    inbox: false,
     decision_adjudications: false,
     decision_learning: false,
     graph_table: false,
@@ -1923,6 +1924,31 @@ function applyCapabilities() {
   });
   applyDecisionCapability();
   applyLearningCapability();
+  applyInboxCapability();
+}
+
+// The inbox is the front door when the host mounts it: the first time the
+// capability is seen, and only then, the workspace opens on it unless the
+// URL asked for another view. A host without it leaves the tab marked
+// unavailable and the workspace on Evidence as before.
+let inboxOpened = false;
+function applyInboxCapability() {
+  const tab = $("tab-inbox");
+  const panel = $("inbox");
+  if (!tab || !panel) return;
+  const available = capability("inbox");
+  tab.disabled = !available;
+  tab.setAttribute("aria-disabled", String(!available));
+  tab.classList.toggle("unavailable", !available);
+  tab.title = available
+    ? "What is awaiting you on this host"
+    : "No approval or learning service is mounted by this host";
+  if (available && !inboxOpened) {
+    inboxOpened = true;
+    const requested = typeof URLSearchParams !== "undefined" && typeof window !== "undefined" && window.location
+      ? new URLSearchParams(window.location.search).get("view") : null;
+    if (!requested) activate("inbox");
+  }
 }
 
 function applyLearningCapability() {
@@ -3162,8 +3188,9 @@ installShellDrawers();
 
 function activate(id) {
   if (id === "decisions" && !capability("decisions")) return;
+  if (id === "inbox" && !capability("inbox")) return;
   setShellDrawer("");
-  document.body.classList.remove("view-chat", "view-evidence", "view-team", "view-decisions", "view-learning", "view-graph", "view-ontology");
+  document.body.classList.remove("view-inbox", "view-chat", "view-evidence", "view-team", "view-decisions", "view-learning", "view-graph", "view-ontology");
   document.body.classList.add(`view-${id}`);
   document.body.classList.toggle("graph-focus", id === "graph");
   document.querySelectorAll(".tab,.panel").forEach((element) => {
@@ -3177,6 +3204,11 @@ function activate(id) {
   document.querySelector(`[data-panel="${id}"]`).classList.add("active");
   $(id).classList.add("active");
   if (id === "graph") draw();
+  // Panels that load on being shown (the inbox) listen for this; the test
+  // harness's document has no events, so the dispatch is guarded.
+  if (typeof CustomEvent === "function" && typeof document.dispatchEvent === "function") {
+    document.dispatchEvent(new CustomEvent("explorer:view", {detail: {id}}));
+  }
 }
 
 function renderGraphList() {

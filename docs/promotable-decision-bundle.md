@@ -258,7 +258,7 @@ and the one screen it lacks is the one the operator needs.
 - The primary screen is an **inbox** of items awaiting a person: pending
   approvals, candidates awaiting promotion, and discovered proposals, grouped
   under their decision class with the class's measured record beside them
-  (#219). Each row expands into the chain: registration, evidence with cited
+  (#219; first slice in [Operator inbox](operator-inbox.md)). Each row expands into the chain: registration, evidence with cited
   spans, policy evaluation, class record, and the decision controls.
 - Graph, ontology, provenance, and learning become **inspectors** reached
   from an item with that item selected, not top-level destinations.
