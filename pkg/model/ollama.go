@@ -3,6 +3,7 @@ package model
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,6 +36,7 @@ const (
 	maxConfiguredOutputTokens  = 1 << 20
 	maxReportedUsageTokens     = 16 << 20
 	maxModelBytes              = 256
+	maxFormatSchemaBytes       = 256 << 10
 	maxConfiguredNumCtx        = 1 << 21
 	maxConfiguredNumGPU        = 1 << 12
 	// OllamaPromptBytesPerToken is the conservative bytes-per-token ratio
@@ -88,6 +90,12 @@ type OllamaConfig struct {
 	// Format is "" (free text) or "json" (Ollama constrains the output to
 	// JSON).
 	Format string
+	// FormatSchema constrains generation to a single JSON schema object.
+	// It cannot be combined with Format: "json".
+	FormatSchema json.RawMessage
+	// PromptBytesPerToken adjusts NumCtx preflight for the selected model.
+	// Zero preserves OllamaPromptBytesPerToken.
+	PromptBytesPerToken float64
 }
 
 type OllamaGenerator struct {
@@ -149,13 +157,19 @@ func (o *OllamaGenerator) CacheIdentity() (string, error) {
 	if options := ollamaGenerationIdentity(o.cfg); options != "" {
 		identity = framedModelIdentity(identity, options)
 	}
+	if len(o.cfg.FormatSchema) != 0 {
+		sum := sha256.Sum256(o.cfg.FormatSchema)
+		identity = framedModelIdentity(identity, fmt.Sprintf("schema-sha256:%x", sum))
+	}
 	return identity, nil
 }
+
+func (*OllamaGenerator) SupportsFormatSchema() bool { return true }
 
 // ollamaGenerationIdentity is empty when no generation option is set, so
 // existing cache identities are unchanged.
 func ollamaGenerationIdentity(cfg OllamaConfig) string {
-	if cfg.NumCtx == 0 && cfg.NumGPU == nil && cfg.Temperature == nil && cfg.Seed == nil && cfg.Format == "" {
+	if cfg.NumCtx == 0 && cfg.NumGPU == nil && cfg.Temperature == nil && cfg.Seed == nil && cfg.Format == "" && cfg.PromptBytesPerToken == 0 {
 		return ""
 	}
 	optional := func(value string, set bool) string {
@@ -174,9 +188,13 @@ func ollamaGenerationIdentity(cfg OllamaConfig) string {
 	if cfg.Temperature != nil {
 		temperature = strconv.FormatFloat(*cfg.Temperature, 'g', -1, 64)
 	}
-	return framedModelIdentity("ollama-generate-options-v1", strconv.Itoa(cfg.NumCtx),
+	identity := framedModelIdentity("ollama-generate-options-v1", strconv.Itoa(cfg.NumCtx),
 		optional(numGPU, cfg.NumGPU != nil), optional(temperature, cfg.Temperature != nil),
 		optional(seed, cfg.Seed != nil), cfg.Format)
+	if cfg.PromptBytesPerToken != 0 {
+		identity = framedModelIdentity(identity, "prompt-bytes-per-token:"+strconv.FormatFloat(cfg.PromptBytesPerToken, 'g', -1, 64))
+	}
+	return identity
 }
 
 func (o *OllamaEmbedder) CacheIdentity() (string, error) {
@@ -205,13 +223,32 @@ func (o *OllamaGenerator) Generate(ctx context.Context, req GenerateRequest) (Ge
 		return GenerateResult{}, err
 	}
 	if o.cfg.NumCtx > 0 {
-		estimated := OllamaPromptTokenEstimate(len(req.Prompt))
+		bytesPerToken := o.cfg.PromptBytesPerToken
+		if bytesPerToken == 0 {
+			bytesPerToken = OllamaPromptBytesPerToken
+		}
+		estimated := int(math.Ceil(float64(len(req.Prompt)) / bytesPerToken))
 		if estimated+req.MaxOutputTokens > o.cfg.NumCtx || estimated >= o.cfg.NumCtx {
 			return GenerateResult{}, &Error{Kind: ErrInvalidRequest, Operation: "ollama generate", Detail: fmt.Sprintf(
-				"prompt of about %d tokens (%d bytes at %d bytes/token) plus %d output tokens exceeds num_ctx %d; "+
+				"prompt of about %d tokens (%d bytes at %g bytes/token) plus %d output tokens exceeds num_ctx %d; "+
 					"Ollama would truncate it silently: raise NumCtx or shorten the prompt",
-				estimated, len(req.Prompt), OllamaPromptBytesPerToken, req.MaxOutputTokens, o.cfg.NumCtx)}
+				estimated, len(req.Prompt), bytesPerToken, req.MaxOutputTokens, o.cfg.NumCtx)}
 		}
+	}
+	format := any(nil)
+	if len(req.FormatSchema) != 0 {
+		if o.cfg.Format != "" {
+			return GenerateResult{}, &Error{Kind: ErrInvalidRequest, Operation: "ollama generate", Detail: "format and schema cannot be combined"}
+		}
+		schema, err := compactFormatSchema(req.FormatSchema)
+		if err != nil {
+			return GenerateResult{}, &Error{Kind: ErrInvalidRequest, Operation: "ollama generate", Detail: err.Error()}
+		}
+		format = schema
+	} else if len(o.cfg.FormatSchema) != 0 {
+		format = o.cfg.FormatSchema
+	} else if o.cfg.Format != "" {
+		format = o.cfg.Format
 	}
 	type generateOptions struct {
 		NumPredict  int      `json:"num_predict,omitempty"`
@@ -224,9 +261,9 @@ func (o *OllamaGenerator) Generate(ctx context.Context, req GenerateRequest) (Ge
 		Model   string           `json:"model"`
 		Prompt  string           `json:"prompt"`
 		Stream  bool             `json:"stream"`
-		Format  string           `json:"format,omitempty"`
+		Format  any              `json:"format,omitempty"`
 		Options *generateOptions `json:"options,omitempty"`
-	}{Model: o.cfg.Model, Prompt: req.Prompt, Stream: false, Format: o.cfg.Format}
+	}{Model: o.cfg.Model, Prompt: req.Prompt, Stream: false, Format: format}
 	options := generateOptions{
 		NumCtx: o.cfg.NumCtx, NumGPU: o.cfg.NumGPU, Temperature: o.cfg.Temperature, Seed: o.cfg.Seed,
 	}
@@ -351,6 +388,16 @@ func validateOllamaConfig(cfg OllamaConfig, path string) (OllamaConfig, string, 
 	if cfg.BaseURL == "" || cfg.Model == "" || len(cfg.Model) > maxModelBytes || strings.ContainsAny(cfg.Model, "\r\n\x00") {
 		return OllamaConfig{}, "", &Error{Kind: ErrInvalidConfig, Operation: op}
 	}
+	if cfg.Format != "" && len(cfg.FormatSchema) != 0 {
+		return OllamaConfig{}, "", &Error{Kind: ErrInvalidConfig, Operation: op, Detail: "format and schema cannot be combined"}
+	}
+	if len(cfg.FormatSchema) != 0 {
+		schema, err := compactFormatSchema(cfg.FormatSchema)
+		if err != nil {
+			return OllamaConfig{}, "", &Error{Kind: ErrInvalidConfig, Operation: op, Detail: err.Error()}
+		}
+		cfg.FormatSchema = schema
+	}
 	u, err := url.Parse(cfg.BaseURL)
 	if err != nil || !u.IsAbs() || u.Host == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || (u.Path != "" && u.Path != "/") {
 		return OllamaConfig{}, "", &Error{Kind: ErrInvalidConfig, Operation: op}
@@ -395,11 +442,25 @@ func validateOllamaConfig(cfg OllamaConfig, path string) (OllamaConfig, string, 
 		cfg.NumCtx < 0 || cfg.NumCtx > maxConfiguredNumCtx ||
 		(cfg.NumGPU != nil && (*cfg.NumGPU < -1 || *cfg.NumGPU > maxConfiguredNumGPU)) ||
 		(cfg.Temperature != nil && (math.IsNaN(*cfg.Temperature) || *cfg.Temperature < 0 || *cfg.Temperature > 100)) ||
-		(cfg.Format != "" && cfg.Format != "json") {
+		(cfg.Format != "" && cfg.Format != "json") ||
+		math.IsNaN(cfg.PromptBytesPerToken) || math.IsInf(cfg.PromptBytesPerToken, 0) ||
+		cfg.PromptBytesPerToken < 0 || cfg.PromptBytesPerToken > 32 ||
+		(cfg.PromptBytesPerToken > 0 && cfg.PromptBytesPerToken < 1) {
 		return OllamaConfig{}, "", &Error{Kind: ErrInvalidConfig, Operation: op}
 	}
 	u.Path = path
 	return cfg, u.String(), nil
+}
+
+func compactFormatSchema(raw json.RawMessage) (json.RawMessage, error) {
+	if len(raw) > maxFormatSchemaBytes || !json.Valid(raw) || len(bytes.TrimSpace(raw)) == 0 || bytes.TrimSpace(raw)[0] != '{' {
+		return nil, errors.New("format schema must be a single JSON object of at most 256 KB")
+	}
+	var compact bytes.Buffer
+	if err := json.Compact(&compact, raw); err != nil {
+		return nil, err
+	}
+	return json.RawMessage(compact.Bytes()), nil
 }
 
 func validateTextRequest(op, text string, maxOutputTokens int, maxTextBytes int64) error {

@@ -29,6 +29,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"reflect"
 	"sort"
 	"strconv"
@@ -287,6 +288,9 @@ func typeDescriptor(t reflect.Type) string {
 	builder.WriteByte('{')
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
+		if field.Tag.Get("json") == "-" {
+			continue
+		}
 		builder.WriteString(field.Name)
 		builder.WriteByte(':')
 		builder.WriteString(field.Type.String())
@@ -299,10 +303,14 @@ func typeDescriptor(t reflect.Type) string {
 }
 
 type ModelRunnerConfig struct {
-	MaxOutputTokens int
-	TokenEstimator  TextTokenEstimator
-	Now             func() time.Time
-	ClockIdentity   string
+	MaxOutputTokens     int
+	TokenEstimator      TextTokenEstimator
+	BytesPerToken       float64
+	UseActionSchema     bool
+	ActionSchemaBuilder func(string) (json.RawMessage, error)
+	ActionAdapter       func(string, inference.ContextPack) (string, error)
+	Now                 func() time.Time
+	ClockIdentity       string
 	// HostContext is optional trusted, host-authored reference material (a
 	// JSON object, at most MaxHostContextBytes) rendered in every prompt's
 	// host_context section, separate from the bounded context query. It is
@@ -328,6 +336,9 @@ func NewModelRunner(generator lowmodel.TextGenerator, cfg ModelRunnerConfig) (*M
 	}
 	if cfg.MaxOutputTokens < 0 {
 		return nil, invalid("model max output tokens cannot be negative")
+	}
+	if math.IsNaN(cfg.BytesPerToken) || math.IsInf(cfg.BytesPerToken, 0) || cfg.BytesPerToken < 0 || cfg.BytesPerToken > 32 {
+		return nil, invalid("bytes per token is outside the supported range")
 	}
 	if cfg.Now == nil {
 		cfg.Now = time.Now
@@ -363,6 +374,9 @@ func (r *ModelRunner) CacheIdentity() (string, error) {
 	if r == nil || r.generator == nil {
 		return "", ErrCacheIdentityUnsafe
 	}
+	if r.cfg.ActionSchemaBuilder != nil || r.cfg.ActionAdapter != nil {
+		return "", ErrCacheIdentityUnsafe
+	}
 	generatorIdentity, err := dependencyCacheIdentity(r.generator, "model generator")
 	if err != nil {
 		return "", err
@@ -387,6 +401,12 @@ func (r *ModelRunner) CacheIdentity() (string, error) {
 	}
 	if len(r.cfg.HostContext) != 0 {
 		parts = append(parts, "host-context:"+digestString(string(r.cfg.HostContext)))
+	}
+	if r.cfg.BytesPerToken != 0 {
+		parts = append(parts, "bytes-per-token:"+strconv.FormatFloat(r.cfg.BytesPerToken, 'g', -1, 64))
+	}
+	if r.cfg.UseActionSchema {
+		parts = append(parts, "action-schema-v1")
 	}
 	identity := framed(parts...)
 	if unsafeCacheText(identity) {
@@ -430,9 +450,31 @@ func (s *modelSession) Next(ctx context.Context, transcript Transcript) (Action,
 	if s.runner.cfg.MaxOutputTokens > 0 && s.runner.cfg.MaxOutputTokens < maxOutput {
 		maxOutput = s.runner.cfg.MaxOutputTokens
 	}
+	perTurn := s.request.budgets.MaxOutputTokensPerTurn
+	if perTurn > 0 {
+		maxOutput = min(maxOutput, perTurn)
+	}
+	if reserve := s.request.budgets.RepairOutputTokens; reserve > 0 && transcript.RepairAttempts() == 0 {
+		if remainingOutput <= reserve {
+			return Action{}, budget("repair output token reserve")
+		}
+		maxOutput = min(maxOutput, remainingOutput-reserve)
+	}
+	var schema json.RawMessage
+	if capable, ok := s.runner.generator.(lowmodel.FormatSchemaGenerator); s.runner.cfg.UseActionSchema && ok && capable.SupportsFormatSchema() {
+		if s.runner.cfg.ActionSchemaBuilder != nil {
+			schema, err = s.runner.cfg.ActionSchemaBuilder(prompt)
+		} else {
+			schema, err = ActionSchemaForPrompt(prompt)
+		}
+		if err != nil {
+			return Action{}, invalid("action schema: " + err.Error())
+		}
+	}
 	generated, err := s.runner.generator.Generate(ctx, lowmodel.GenerateRequest{
 		Prompt:          prompt,
 		MaxOutputTokens: maxOutput,
+		FormatSchema:    schema,
 	})
 	if err != nil {
 		if errors.Is(err, lowmodel.ErrOversizedResponse) {
@@ -444,13 +486,23 @@ func (s *modelSession) Next(ctx context.Context, transcript Transcript) (Action,
 		InputTokens:  generated.Usage.InputTokens,
 		OutputTokens: generated.Usage.OutputTokens,
 	}
-	if usage.InputTokens < 0 || usage.OutputTokens < 0 {
+	if usage.InputTokens < 0 || usage.OutputTokens < 0 || usage.OutputTokens > maxOutput {
 		return Action{}, newActionError(invalid("model token usage cannot be negative"), Usage{})
 	}
 	if err := validateGeneratedProvenance(generated.Provenance, s.request.provenance.model); err != nil {
 		return Action{}, newActionError(err, usage)
 	}
-	action, err := parseModelAction(generated.Text, transcript.context, s.request.provenance, usage, s.runner.cfg.Now())
+	responseText := generated.Text
+	if s.runner.cfg.ActionAdapter != nil {
+		responseText, err = s.runner.cfg.ActionAdapter(responseText, transcript.context)
+		if err != nil {
+			return Action{}, actionError{err: malformed("model action: " + err.Error()), usage: usage, output: generated.Text}
+		}
+	}
+	if perTurn > 0 && usage.OutputTokens >= maxOutput {
+		return Action{}, actionError{err: malformed("model output reached its per-turn cap"), usage: usage, output: generated.Text}
+	}
+	action, err := parseModelAction(responseText, transcript.context, s.request.provenance, usage, s.runner.cfg.Now())
 	if err != nil {
 		if errors.Is(err, ErrMalformedModelOutput) {
 			return Action{}, actionError{err: err, usage: usage, output: generated.Text}
@@ -464,7 +516,11 @@ func (r *ModelRunner) estimateInputTokens(ctx context.Context, prompt string) (i
 	if r.cfg.TokenEstimator != nil {
 		return r.cfg.TokenEstimator.EstimateTextTokens(ctx, prompt)
 	}
-	return len([]byte(prompt)), nil
+	bytesPerToken := r.cfg.BytesPerToken
+	if bytesPerToken == 0 {
+		bytesPerToken = 1
+	}
+	return int(math.Ceil(float64(len([]byte(prompt))) / bytesPerToken)), nil
 }
 
 func transcriptInputTokens(transcript Transcript) int {
