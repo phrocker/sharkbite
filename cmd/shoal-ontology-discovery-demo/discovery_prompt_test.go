@@ -219,7 +219,7 @@ func withOntology(t *testing.T, version ontology.OntologyVersion) (*demoEnvironm
 		t.Fatal(err)
 	}
 	recorder := &memoryDiscoveryRecorder{}
-	return demo, request, webapi.OntologyDiscoveryConfig{Model: provenance, Recorder: recorder}, recorder
+	return demo, request, webapi.OntologyDiscoveryConfig{Model: provenance, Recorder: recorder, ProtocolVersion: "v2"}, recorder
 }
 
 func TestOntologyDiscoveryOntologyLargerThanQueryBoundReachesModel(t *testing.T) {
@@ -296,6 +296,64 @@ func TestOntologyDiscoveryDeltaMatchesFullAnswer(t *testing.T) {
 				t.Fatalf("persisted draft is not base + rename: %v", keys)
 			}
 		})
+	}
+}
+
+type discoveryV3Script struct{ legacy *discoveryScript }
+
+func (s *discoveryV3Script) Generate(ctx context.Context, request model.GenerateRequest) (model.GenerateResult, error) {
+	result, err := s.legacy.Generate(ctx, request)
+	if err != nil {
+		return result, err
+	}
+	var action struct {
+		Action string `json:"action"`
+		Claims []struct {
+			Object struct {
+				Value string `json:"value"`
+			} `json:"object"`
+			EvidenceIDs []string `json:"evidence_ids"`
+		} `json:"claims"`
+	}
+	if err := json.Unmarshal([]byte(result.Text), &action); err != nil || action.Action != "stop" {
+		return result, err
+	}
+	if len(action.Claims) != 1 {
+		return result, fmt.Errorf("scripted stop has %d claims", len(action.Claims))
+	}
+	var candidate map[string]any
+	if err := json.Unmarshal([]byte(action.Claims[0].Object.Value), &candidate); err != nil {
+		return result, err
+	}
+	changes, ok := candidate["changes"].(map[string]any)
+	if !ok {
+		return result, fmt.Errorf("scripted stop has no changes")
+	}
+	changes["morphisms"] = candidate["morphisms"]
+	encoded, err := json.Marshal(map[string]any{"action": "stop", "proposal": map[string]any{
+		"rationale": candidate["rationale"], "changes": changes,
+		"counterevidence": candidate["counterevidence"], "open_questions": candidate["open_questions"],
+		"evidence_ids": action.Claims[0].EvidenceIDs,
+	}})
+	if err != nil {
+		return result, err
+	}
+	result.Text = string(encoded)
+	return result, nil
+}
+
+func TestOntologyDiscoveryV3AndV2PersistSameDraft(t *testing.T) {
+	demo, request, config, _ := discoveryFixture(t)
+	config.Generator = &discoveryScript{form: "changes"}
+	first, err := demo.service.DiscoverOntology(demo.ctx, request, config)
+	if err != nil || first.Audit.Status != "draft" {
+		t.Fatalf("v2 draft: %+v %v", first.Audit, err)
+	}
+	config.ProtocolVersion = "v3"
+	config.Generator = &discoveryV3Script{legacy: &discoveryScript{form: "changes"}}
+	second, err := demo.service.DiscoverOntology(demo.ctx, request, config)
+	if err != nil || second.Audit.Status != "duplicate" || second.Proposal.ID() != first.Proposal.ID() || second.Audit.CandidateVersionID != first.Audit.CandidateVersionID {
+		t.Fatalf("v3 differs from v2 persisted draft: %+v %v", second.Audit, err)
 	}
 }
 

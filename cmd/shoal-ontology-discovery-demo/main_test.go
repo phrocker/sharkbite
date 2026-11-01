@@ -123,7 +123,7 @@ func discoveryFixture(t *testing.T) (*demoEnvironment, webapi.OntologyDiscoveryR
 	}
 	recorder := &memoryDiscoveryRecorder{}
 	return demo, request, webapi.OntologyDiscoveryConfig{
-		Generator: scriptedModel{scenario: "rename"}, Model: provenance, Recorder: recorder,
+		Generator: scriptedModel{scenario: "rename"}, Model: provenance, Recorder: recorder, ProtocolVersion: "v2",
 	}, recorder
 }
 
