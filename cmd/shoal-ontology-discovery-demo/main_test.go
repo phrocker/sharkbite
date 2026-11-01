@@ -163,7 +163,13 @@ func TestOntologyDiscoveryRejectsCandidates(t *testing.T) {
 				case "duplicate_field":
 					text = `{"rationale":"one","rationale":"two"}`
 				case "unknown_definition":
-					candidate["proposed_version"].(map[string]any)["concepts"] = []any{}
+					// Removing every concept leaves the relationships pointing
+					// at undefined concept keys.
+					candidate["changes"].(map[string]any)["remove"] = []any{
+						map[string]string{"namespace": "concept", "key": "skill"},
+						map[string]string{"namespace": "concept", "key": "tool"},
+						map[string]string{"namespace": "concept", "key": "capability"},
+					}
 				case "unsupported_evolution":
 					candidate["morphisms"] = []any{}
 				case "missing_morphism_evidence":
@@ -478,5 +484,19 @@ func TestOntologyDiscoveryConcurrentServicesDeduplicate(t *testing.T) {
 	proposals, err := demo.client.OntologyProposals(demo.ctx)
 	if err != nil || len(proposals) != 1 {
 		t.Fatalf("concurrent semantic duplicates persisted: %d, %v", len(proposals), err)
+	}
+}
+
+func TestOllamaConfigDerivesContextFromBudgets(t *testing.T) {
+	derived := ollamaConfig("http://127.0.0.1:11434", "llama3.1", 0, -1, -1, -1, "", time.Minute)
+	if derived.NumCtx != 65536/2+16384 || derived.NumGPU != nil || derived.Temperature != nil || derived.Seed != nil {
+		t.Fatalf("derived config = %+v", derived)
+	}
+	explicit := ollamaConfig("http://127.0.0.1:11434", "llama3.1", 20480, 22, 0, 7, "json", time.Minute)
+	if explicit.NumCtx != 20480 || *explicit.NumGPU != 22 || *explicit.Temperature != 0 || *explicit.Seed != 7 || explicit.Format != "json" {
+		t.Fatalf("explicit config = %+v", explicit)
+	}
+	if _, err := model.NewOllamaGenerator(explicit); err != nil {
+		t.Fatal(err)
 	}
 }

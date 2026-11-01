@@ -43,12 +43,18 @@ const (
 	MaxLogicalIDBytes  = 4096
 	MaxToolQueryBytes  = 16 * 1024
 	MaxTranscriptSteps = 1024
+	// MaxOutputRepairTurns bounds Generator.SetOutputRepairTurns.
+	MaxOutputRepairTurns = 4
 )
 
 var (
 	ErrInvalid           = errors.New("invalid agent harness value")
 	ErrBudgetExhausted   = errors.New("agent harness budget exhausted")
 	ErrRunnerUnavailable = errors.New("agent harness runner unavailable")
+	// ErrMalformedModelOutput marks model text that is not one valid action
+	// JSON object. It always also matches ErrInvalid. A Generator configured
+	// with SetOutputRepairTurns may answer it with a repair turn.
+	ErrMalformedModelOutput = errors.New("model output is not a valid action JSON object")
 )
 
 type ActionKind string
@@ -501,8 +507,24 @@ type Transcript struct {
 	context         inference.ContextPack
 	embeddingSpaces interaction.EmbeddingSpaceSet
 	exchanges       []Exchange
+	repairs         []repairAttempt
 	final           *Action
 }
+
+// repairAttempt is one model turn whose output was malformed and was answered
+// with a repair turn instead of ending the run. It consumed a step and its
+// reported tokens, and it stays in the transcript, trace, and interaction
+// record.
+type repairAttempt struct {
+	step    int
+	usage   Usage
+	failure string
+	output  string
+}
+
+// RepairAttempts is the number of malformed model turns this transcript
+// answered with a repair turn.
+func (t Transcript) RepairAttempts() int { return len(t.repairs) }
 
 func newTranscript(request SessionRequest) Transcript {
 	t := Transcript{requestID: request.id, context: request.context}
@@ -673,13 +695,14 @@ type Recorder interface {
 }
 
 type Generator struct {
-	runner     Runner
-	tools      ToolHost
-	budgets    Budgets
-	provenance Provenance
-	recorder   Recorder
-	cache      Cache
-	now        func() time.Time
+	runner        Runner
+	tools         ToolHost
+	budgets       Budgets
+	provenance    Provenance
+	recorder      Recorder
+	cache         Cache
+	now           func() time.Time
+	outputRepairs int
 }
 
 func NewGenerator(runner Runner, tools ToolHost, budgets Budgets, provenance Provenance, recorder Recorder) (*Generator, error) {
@@ -722,6 +745,24 @@ func (g *Generator) SetClock(now func() time.Time) error {
 		return invalid("clock is required")
 	}
 	g.now = now
+	return nil
+}
+
+// SetOutputRepairTurns allows up to turns repair turns per run. When the
+// runner reports ErrMalformedModelOutput and a repair remains, the failed turn
+// is recorded (trace iteration and failure, transcript, interaction turn
+// marked failed) and the next step shows the model the parse error instead of
+// ending the run. Repair turns consume the ordinary step and token budgets;
+// no extra step is granted. The default, zero, ends the run on the first
+// malformed output.
+func (g *Generator) SetOutputRepairTurns(turns int) error {
+	if g == nil {
+		return invalid("generator is required")
+	}
+	if turns < 0 || turns > MaxOutputRepairTurns {
+		return invalid("output repair turns are outside their bound")
+	}
+	g.outputRepairs = turns
 	return nil
 }
 
@@ -915,7 +956,8 @@ func (g *Generator) Run(ctx context.Context, pack inference.ContextPack) (Record
 		}
 		action, nextErr := session.Next(runCtx, transcript)
 		if nextErr != nil {
-			if usage, ok := actionErrorUsage(nextErr); ok {
+			usage, hasUsage := actionErrorUsage(nextErr)
+			if hasUsage {
 				inputTokens = addSaturating(inputTokens, usage.InputTokens)
 				outputTokens = addSaturating(outputTokens, usage.OutputTokens)
 				trace.Iterations = append(trace.Iterations, IterationTrace{
@@ -924,6 +966,20 @@ func (g *Generator) Run(ctx context.Context, pack inference.ContextPack) (Record
 			}
 			if runCtx.Err() != nil {
 				return finish(stopReasonFor(runCtx.Err()), step, "model", inference.InferenceResult{}, runCtx.Err())
+			}
+			// A repair needs a later step to run in: it is never an extra
+			// step beyond MaxSteps.
+			if hasUsage && errors.Is(nextErr, ErrMalformedModelOutput) &&
+				len(transcript.repairs) < g.outputRepairs && step+1 < g.budgets.MaxSteps {
+				trace.Failures = append(trace.Failures, FailureTrace{
+					Iteration: step, Operation: "model output (repair turn follows)", Error: nextErr.Error(),
+				})
+				trace.Iterations[len(trace.Iterations)-1].Failure = nextErr.Error()
+				transcript.repairs = append(transcript.repairs, repairAttempt{
+					step: step, usage: usage, failure: nextErr.Error(), output: actionErrorOutput(nextErr),
+				})
+				transcript.id = transcriptID(transcript)
+				continue
 			}
 			if errors.Is(nextErr, ErrInvalid) || errors.Is(nextErr, ErrBudgetExhausted) {
 				return finish(stopReasonFor(nextErr), step, "model", inference.InferenceResult{}, nextErr)
@@ -1259,10 +1315,24 @@ func evaluationRecord(record Record) (EvaluationRecord, error) {
 		return EvaluationRecord{}, err
 	}
 	evaluation.SeedNodeIDs = sourceNodeIDs(record.Request.context.Evidence())
-	for index, exchange := range record.Transcript.exchanges {
+	// Turn indexes are harness steps. A repaired malformed turn occupies its
+	// step as a failed turn with its token usage, so later turns keep the
+	// index of the step that produced them.
+	step, repairs := 0, record.Transcript.repairs
+	nextRepairs := func() {
+		for len(repairs) > 0 && repairs[0].step == step {
+			evaluation.Turns = append(evaluation.Turns, InteractionTurn{
+				Index: step, Usage: repairs[0].usage, Failed: true,
+			})
+			repairs = repairs[1:]
+			step++
+		}
+	}
+	for _, exchange := range record.Transcript.exchanges {
+		nextRepairs()
 		add(exchange.action)
 		turn := InteractionTurn{
-			Index:            index,
+			Index:            step,
 			Decision:         exchange.action.kind,
 			Usage:            exchange.action.usage,
 			ToolKind:         exchange.result.kind,
@@ -1273,14 +1343,16 @@ func evaluationRecord(record Record) (EvaluationRecord, error) {
 		if err != nil {
 			return EvaluationRecord{}, err
 		}
-		if _, failed := failedIterations[index]; failed {
+		if _, failed := failedIterations[step]; failed {
 			turn.Failed = true
 		}
 		evaluation.Turns = append(evaluation.Turns, turn)
+		step++
 	}
+	nextRepairs()
 	if record.Transcript.final != nil {
 		add(*record.Transcript.final)
-		index := len(record.Transcript.exchanges)
+		index := step
 		turn := InteractionTurn{
 			Index:    index,
 			Decision: record.Transcript.final.kind,
@@ -1542,6 +1614,10 @@ func transcriptID(t Transcript) shoal.ID {
 			parts = append(parts, string(a.ID()))
 		}
 	}
+	for _, r := range t.repairs {
+		parts = append(parts, "repair", strconv.Itoa(r.step),
+			strconv.Itoa(r.usage.InputTokens), strconv.Itoa(r.usage.OutputTokens), digestString(r.failure), digestString(r.output))
+	}
 	if t.final != nil {
 		parts = append(parts, string(t.final.kind), string(t.final.correlation), actionKey(*t.final),
 			strconv.Itoa(t.final.usage.InputTokens), strconv.Itoa(t.final.usage.OutputTokens), string(t.final.result.ID()))
@@ -1602,6 +1678,7 @@ func cloneTranscript(t Transcript) Transcript {
 	t.embeddingSpaces.Identities = append(
 		[]string(nil), t.embeddingSpaces.Identities...)
 	t.exchanges = append([]Exchange(nil), t.exchanges...)
+	t.repairs = append([]repairAttempt(nil), t.repairs...)
 	for i := range t.exchanges {
 		t.exchanges[i].result = cloneToolResult(t.exchanges[i].result)
 	}

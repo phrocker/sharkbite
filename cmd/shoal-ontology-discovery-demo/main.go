@@ -45,6 +45,13 @@ func run(ctx context.Context, args []string, output io.Writer) (resultErr error)
 	ollamaURL := flags.String("ollama-url", "http://localhost:11434", "Local Ollama endpoint")
 	publish := flags.Bool("publish", false, "Explicitly submit, approve, and publish this DEMO proposal after discovery")
 	scenario := flags.String("scenario", "rename", "Scripted fixture: rename, additive, abstain, or unchanged")
+	numCtx := flags.Int("num-ctx", 0, "Ollama context window in tokens; 0 derives it from the discovery budgets "+
+		"(MaxInputTokens/2 + MaxOutputTokens), so no prompt the harness accepts is truncated")
+	numGPU := flags.Int("num-gpu", -1, "Ollama layers offloaded to the GPU; -1 lets Ollama decide")
+	temperature := flags.Float64("temperature", 0, "Ollama sampling temperature; negative leaves Ollama's default")
+	seed := flags.Int("seed", 7, "Ollama sampling seed; negative leaves Ollama's default")
+	format := flags.String("format", "json", `Ollama output format: "json" or "" (free text)`)
+	ollamaTimeout := flags.Duration("ollama-timeout", 2*time.Minute, "Timeout for one Ollama call")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
@@ -69,9 +76,8 @@ func run(ctx context.Context, args []string, output io.Writer) (resultErr error)
 			return fmt.Errorf("Ollama requires -model and does not accept scripted scenarios")
 		}
 		var err error
-		generator, err = model.NewOllamaGenerator(model.OllamaConfig{
-			BaseURL: *ollamaURL, Model: *modelName, Timeout: 2 * time.Minute,
-		})
+		generator, err = model.NewOllamaGenerator(ollamaConfig(*ollamaURL, *modelName, *numCtx, *numGPU,
+			*temperature, *seed, *format, *ollamaTimeout))
 		if err != nil {
 			return err
 		}
@@ -181,6 +187,28 @@ func run(ctx context.Context, args []string, output io.Writer) (resultErr error)
 	_, err = fmt.Fprintf(output, "restart=preserved state=%s selected_version_resolved=%d/%d\nreports=%s\n",
 		stored.State(), resolved, len(demo.assertions), filepath.Join(*dir, "discovery-reports.jsonl"))
 	return err
+}
+
+// ollamaConfig builds the demo's Ollama generator configuration. A zero
+// numCtx is derived from the default discovery budgets: the harness accepts a
+// first prompt of up to MaxInputTokens bytes, which OllamaGenerator counts as
+// MaxInputTokens/2 tokens, plus up to MaxOutputTokens of output.
+func ollamaConfig(baseURL, name string, numCtx, numGPU int, temperature float64, seed int, format string, timeout time.Duration) model.OllamaConfig {
+	if numCtx == 0 {
+		budgets := webapi.DefaultOntologyDiscoveryBudgets()
+		numCtx = model.OllamaPromptTokenEstimate(budgets.MaxInputTokens) + budgets.MaxOutputTokens
+	}
+	cfg := model.OllamaConfig{BaseURL: baseURL, Model: name, Timeout: timeout, NumCtx: numCtx, Format: format}
+	if numGPU >= 0 {
+		cfg.NumGPU = &numGPU
+	}
+	if temperature >= 0 {
+		cfg.Temperature = &temperature
+	}
+	if seed >= 0 {
+		cfg.Seed = &seed
+	}
+	return cfg
 }
 
 type demoEnvironment struct {
@@ -452,7 +480,12 @@ func (compatibilityEvaluator) EvaluateOntology(_ context.Context, base, candidat
 	}, nil
 }
 
-type scriptedModel struct{ scenario string }
+// scriptedModel answers with a delta ("changes") unless full is set, in which
+// case it restates the complete proposed_version (the compatibility form).
+type scriptedModel struct {
+	scenario string
+	full     bool
+}
 
 func (s scriptedModel) Generate(_ context.Context, request model.GenerateRequest) (model.GenerateResult, error) {
 	var prompt struct {
@@ -463,7 +496,10 @@ func (s scriptedModel) Generate(_ context.Context, request model.GenerateRequest
 				DocumentID string `json:"document_id"`
 			} `json:"citation"`
 		} `json:"evidence"`
-		Transcript []json.RawMessage `json:"transcript"`
+		Transcript  []json.RawMessage `json:"transcript"`
+		HostContext struct {
+			Base webapi.OntologyProposalVersionDraft `json:"base"`
+		} `json:"host_context"`
 	}
 	if err := json.Unmarshal([]byte(request.Prompt), &prompt); err != nil {
 		return model.GenerateResult{}, err
@@ -490,19 +526,29 @@ func (s scriptedModel) Generate(_ context.Context, request model.GenerateRequest
 			"unresolved": []any{map[string]any{"input": "ontology", "reason": "Fixture abstention: evidence does not justify a schema change"}}}
 	} else {
 		var query struct {
-			Base      webapi.OntologyProposalVersionDraft `json:"base"`
-			BaseID    string                              `json:"base_version_id"`
-			Predicate string                              `json:"predicate"`
+			BaseID    string `json:"base_version_id"`
+			Predicate string `json:"predicate"`
 		}
 		if err := json.Unmarshal([]byte(prompt.Query), &query); err != nil {
 			return model.GenerateResult{}, err
 		}
+		base := prompt.HostContext.Base
+		if len(base.Concepts) == 0 {
+			return model.GenerateResult{}, fmt.Errorf("scripted fixture requires the base ontology in host_context")
+		}
+		changes := map[string]any{
+			"concepts": []any{}, "relationships": []any{}, "properties": []any{}, "remove": []any{},
+		}
 		var morphisms []any
 		switch s.scenario {
 		case "rename":
-			for i := range query.Base.Relationships {
-				if query.Base.Relationships[i].Key == "provides_tool" {
-					query.Base.Relationships[i].Key, query.Base.Relationships[i].Name = "offers_tool", "Offers tool"
+			for i := range base.Relationships {
+				if base.Relationships[i].Key == "provides_tool" {
+					renamed := base.Relationships[i]
+					renamed.Key, renamed.Name = "offers_tool", "Offers tool"
+					base.Relationships[i] = renamed
+					changes["relationships"] = []any{renamed}
+					changes["remove"] = []any{map[string]string{"namespace": "relationship", "key": "provides_tool"}}
 					morphisms = append(morphisms, map[string]any{
 						"kind": "rename", "sources": []any{map[string]string{"namespace": "relationship", "key": "provides_tool"}},
 						"targets":      []any{map[string]string{"namespace": "relationship", "key": "offers_tool"}},
@@ -511,19 +557,26 @@ func (s scriptedModel) Generate(_ context.Context, request model.GenerateRequest
 				}
 			}
 		case "additive":
-			query.Base.Concepts = append(query.Base.Concepts, webapi.OntologyProposalConceptDraft{
+			added := webapi.OntologyProposalConceptDraft{
 				Key: "tool_collection", Name: "Tool collection", Properties: []string{"name"},
-			})
+			}
+			base.Concepts = append(base.Concepts, added)
+			changes["concepts"] = []any{added}
 		case "unchanged":
 		default:
 			return model.GenerateResult{}, fmt.Errorf("invalid scripted scenario")
 		}
-		candidate, err := json.Marshal(map[string]any{
-			"rationale":        "Scripted conformance candidate; not a learned ontology or a demonstrated quality improvement",
-			"proposed_version": query.Base, "morphisms": morphisms,
+		body := map[string]any{
+			"rationale": "Scripted conformance candidate; not a learned ontology or a demonstrated quality improvement",
+			"changes":   changes, "morphisms": morphisms,
 			"counterevidence": []string{"The existing schema already represents all source facts"},
 			"open_questions":  []string{"Does an independent real task improve? This fixture does not establish that."},
-		})
+		}
+		if s.full {
+			delete(body, "changes")
+			body["proposed_version"] = base
+		}
+		candidate, err := json.Marshal(body)
 		if err != nil {
 			return model.GenerateResult{}, err
 		}
