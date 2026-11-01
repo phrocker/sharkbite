@@ -5,6 +5,7 @@ package model
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -26,6 +27,13 @@ var (
 // TextGenerator generates text from a bounded provider-neutral request.
 type TextGenerator interface {
 	Generate(context.Context, GenerateRequest) (GenerateResult, error)
+}
+
+// FormatSchemaGenerator can constrain an individual generation to a JSON schema.
+// Callers must check this capability before setting GenerateRequest.FormatSchema.
+type FormatSchemaGenerator interface {
+	TextGenerator
+	SupportsFormatSchema() bool
 }
 
 // CacheIdentityProvider returns a stable, non-secret identity for
@@ -51,6 +59,7 @@ type Embedder interface {
 type GenerateRequest struct {
 	Prompt          string
 	MaxOutputTokens int
+	FormatSchema    json.RawMessage
 }
 
 type GenerateResult struct {

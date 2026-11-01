@@ -76,6 +76,9 @@ type Budgets struct {
 	MaxGraphNodes     int
 	MaxFanout         int
 	MaxRepeatedAction int
+	// Execution-only controls: omitted from the legacy prompt envelope.
+	MaxOutputTokensPerTurn int `json:"-"`
+	RepairOutputTokens     int `json:"-"`
 }
 
 // NormalizeBudgets applies public budget defaults and validates all bounds.
@@ -159,6 +162,7 @@ func (b Budgets) validate() error {
 		return invalid("max elapsed must be positive")
 	}
 	if b.MaxInputTokens < 0 || b.MaxOutputTokens < 0 || b.MaxEvidence <= 0 ||
+		b.MaxOutputTokensPerTurn < 0 || b.RepairOutputTokens < 0 ||
 		b.MaxGraphHops < 0 || b.MaxGraphNodes <= 0 || b.MaxFanout <= 0 ||
 		b.MaxRepeatedAction <= 0 {
 		return invalid("budget values are outside the supported range")
@@ -1633,9 +1637,13 @@ func deriveID(namespace string, parts ...string) shoal.ID {
 	return shoal.ID(namespace + ":" + hex.EncodeToString(h.Sum(nil)))
 }
 func canonicalBudgets(b Budgets) string {
-	return fmt.Sprintf("%d/%d/%d/%d/%d/%d/%d/%d/%d",
+	base := fmt.Sprintf("%d/%d/%d/%d/%d/%d/%d/%d/%d",
 		b.MaxSteps, b.MaxElapsed.Nanoseconds(), b.MaxInputTokens, b.MaxOutputTokens,
 		b.MaxEvidence, b.MaxGraphHops, b.MaxGraphNodes, b.MaxFanout, b.MaxRepeatedAction)
+	if b.MaxOutputTokensPerTurn != 0 || b.RepairOutputTokens != 0 {
+		return fmt.Sprintf("%s/%d/%d", base, b.MaxOutputTokensPerTurn, b.RepairOutputTokens)
+	}
+	return base
 }
 func validateLogicalID(name string, id shoal.ID) error {
 	if len(id) > MaxLogicalIDBytes {
