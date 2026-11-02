@@ -50,13 +50,27 @@ func run(ctx context.Context, args []string, output io.Writer) (resultErr error)
 	numGPU := flags.Int("num-gpu", -1, "Ollama layers offloaded to the GPU; -1 lets Ollama decide")
 	temperature := flags.Float64("temperature", 0, "Ollama sampling temperature; negative leaves Ollama's default")
 	seed := flags.Int("seed", 7, "Ollama sampling seed; negative leaves Ollama's default")
-	format := flags.String("format", "json", `Ollama output format: "json" or "" (free text)`)
+	format := flags.String("format", "", `Ollama output format: "" for v3 schema output, or "json" with -protocol v2`)
+	protocol := flags.String("protocol", "", "Discovery protocol v2 or v3; defaults to v2 for scripted and v3 for Ollama")
 	ollamaTimeout := flags.Duration("ollama-timeout", 2*time.Minute, "Timeout for one Ollama call")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
 	if *dir == "" || flags.NArg() != 0 {
 		return fmt.Errorf("-dir must name an isolated local demo directory")
+	}
+	if *protocol == "" {
+		if *provider == "scripted" {
+			*protocol = "v2"
+		} else {
+			*protocol = "v3"
+		}
+	}
+	if *protocol != "v2" && *protocol != "v3" {
+		return fmt.Errorf("-protocol must be v2 or v3")
+	}
+	if *provider == "ollama" && *protocol == "v3" && *format != "" {
+		return fmt.Errorf("-format json cannot be combined with the v3 action schema")
 	}
 	var generator model.TextGenerator
 	switch *provider {
@@ -104,7 +118,8 @@ func run(ctx context.Context, args []string, output io.Writer) (resultErr error)
 	defer func() { resultErr = errors.Join(resultErr, report.Close()) }()
 	config := webapi.OntologyDiscoveryConfig{
 		Generator: generator, Model: provenance, Recorder: &reportRecorder{file: report},
-		Evaluator: compatibilityEvaluator{},
+		Evaluator:       compatibilityEvaluator{},
+		ProtocolVersion: *protocol,
 	}
 	result, err := demo.service.DiscoverOntology(demo.ctx, request, config)
 	if err != nil {
@@ -198,7 +213,7 @@ func ollamaConfig(baseURL, name string, numCtx, numGPU int, temperature float64,
 		budgets := webapi.DefaultOntologyDiscoveryBudgets()
 		numCtx = model.OllamaPromptTokenEstimate(budgets.MaxInputTokens) + budgets.MaxOutputTokens
 	}
-	cfg := model.OllamaConfig{BaseURL: baseURL, Model: name, Timeout: timeout, NumCtx: numCtx, Format: format}
+	cfg := model.OllamaConfig{BaseURL: baseURL, Model: name, Timeout: timeout, NumCtx: numCtx, Format: format, PromptBytesPerToken: 2.5}
 	if numGPU >= 0 {
 		cfg.NumGPU = &numGPU
 	}

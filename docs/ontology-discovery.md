@@ -57,8 +57,10 @@ To try an already-installed model with a local Ollama server:
 go run ./cmd/shoal-ontology-discovery-demo -dir .\.shoal\discovery-model -provider ollama -model YOUR_INSTALLED_MODEL
 ```
 
-The demo sends Ollama a context window (`-num-ctx`), JSON output format
-(`-format json`), temperature 0 and seed 7 by default. Without `-num-ctx` the
+The Ollama demo uses discovery v3 and sends a per-turn JSON schema, a context
+window (`-num-ctx`), temperature 0, and seed 7 by default. Use
+`-protocol v2 -format json` to replay the legacy prompt and string-valued
+candidate. Without `-num-ctx` the
 window is derived from the discovery budgets (`MaxInputTokens/2 +
 MaxOutputTokens`, 49,152 tokens for the defaults); a machine that shares its
 GPU can lower it and pin the offloaded layers, for example
@@ -67,11 +69,11 @@ minutes; partly CPU-offloaded models need more).
 
 `pkg/model.OllamaGenerator` sends `num_ctx`, `num_gpu`, `temperature`, `seed`
 and `format` only when configured (`OllamaConfig.NumCtx`, `NumGPU`,
-`Temperature`, `Seed`, `Format`). Ollama silently truncates a prompt longer
+`Temperature`, `Seed`, `Format`, `FormatSchema`). Ollama silently truncates a prompt longer
 than its context window (2,048 tokens by default on 0.3.x), so when `NumCtx`
 is set the generator refuses, before sending, a prompt whose estimated tokens
-(`OllamaPromptTokenEstimate`: two bytes per token, conservative for these
-JSON prompts; llama3.1 measured about 2.3) plus `MaxOutputTokens` exceed it,
+(`PromptBytesPerToken`: 2.5 in this demo; the generator's legacy default is
+two bytes per token) plus `MaxOutputTokens` exceed it,
 and rejects a response whose reported prompt and output tokens exceed it.
 With `NumCtx` unset no such check is possible.
 
@@ -140,27 +142,29 @@ its bound). `host_context` is host-owned reference material, never evidence,
 and its bytes count against the input-token budget like the rest of the
 prompt. The audit's prompt hash covers both.
 
-It must produce one inferred stop claim with the supplied base-version subject
-and discovery predicate, whose string object is strict candidate JSON, or an
-explained unresolved/unsupported abstention. Candidates contain a rationale,
-the proposed change, supported morphisms, counterevidence, and open questions.
+In v3, the model stops with one `proposal` object or one explained `issue`
+object. The host supplies the base-version subject, discovery predicate, and
+stop correlation ID before the existing evidence verification and governance
+path runs. The prior v2 stop claim with a string-valued candidate remains
+accepted during the transition. The v2 prompt is unchanged when
+`ProtocolVersion` is set to `v2`.
 
-The proposed change is either a delta (`changes`, preferred by the
-instruction) or a complete `proposed_version` (still accepted); exactly one
-must be present:
+The v3 `changes` object is a delta against the pinned base. The older v2
+candidate accepts either a delta or a complete `proposed_version`:
 
 ```json
-{"rationale": "...",
+{"action": "stop", "proposal": {
+ "rationale": "...", "evidence_ids": ["..."],
  "changes": {
    "concepts": [], "properties": [],
    "relationships": [{"key": "offers_tool", "name": "Offers tool",
      "from_concepts": ["skill"], "to_concepts": ["tool"], "directed": true}],
-   "remove": [{"namespace": "relationship", "key": "provides_tool"}]},
- "morphisms": [{"kind": "rename",
+   "remove": [{"namespace": "relationship", "key": "provides_tool"}],
+   "morphisms": [{"kind": "rename",
    "sources": [{"namespace": "relationship", "key": "provides_tool"}],
    "targets": [{"namespace": "relationship", "key": "offers_tool"}],
-   "evidence_ids": ["..."], "rationale": "..."}],
- "counterevidence": ["..."], "open_questions": ["..."]}
+   "evidence_ids": ["..."], "rationale": "..."}]},
+ "counterevidence": ["..."], "open_questions": ["..."]}}
 ```
 
 A listed definition whose key is in the base replaces that definition in full

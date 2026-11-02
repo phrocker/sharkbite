@@ -71,6 +71,8 @@ type OntologyDiscoveryConfig struct {
 	Budgets   harness.Budgets
 	Recorder  OntologyDiscoveryRecorder
 	Evaluator OntologyDiscoveryEvaluator
+	// ProtocolVersion defaults to v3. Set v2 to retain its exact prompt.
+	ProtocolVersion string
 }
 
 // OntologyDiscoveryRequest selects explicit historical sessions, not an
@@ -246,9 +248,20 @@ func (s *EmbeddedService) DiscoverOntology(
 	if err != nil {
 		return OntologyDiscoveryResult{}, err
 	}
+	protocolVersion := config.ProtocolVersion
+	if protocolVersion == "" {
+		protocolVersion = "v3"
+	}
+	if protocolVersion != "v2" && protocolVersion != "v3" {
+		return OntologyDiscoveryResult{}, discoveryInvalid("unsupported discovery protocol version")
+	}
 	budgets := config.Budgets
 	if budgets == (harness.Budgets{}) {
 		budgets = DefaultOntologyDiscoveryBudgets()
+		if protocolVersion == "v3" {
+			budgets.MaxOutputTokensPerTurn = 1024
+			budgets.RepairOutputTokens = 1024
+		}
 	}
 	budgets, err = harness.NormalizeBudgets(budgets)
 	if err != nil {
@@ -261,7 +274,13 @@ func (s *EmbeddedService) DiscoverOntology(
 		budgets.MaxGraphHops > 32 || budgets.MaxFanout > 128 {
 		return OntologyDiscoveryResult{}, discoveryInvalid("discovery requires bounded model and graph budgets")
 	}
-	query, hostContext, err := discoveryPrompt(base, request, usage, DiscoveryOntologyBound(budgets))
+	var query string
+	var hostContext json.RawMessage
+	if protocolVersion == "v3" {
+		query, hostContext, err = discoveryPromptV3(base, request, usage, DiscoveryOntologyBound(budgets))
+	} else {
+		query, hostContext, err = discoveryPrompt(base, request, usage, DiscoveryOntologyBound(budgets))
+	}
 	if err != nil {
 		return OntologyDiscoveryResult{}, err
 	}
@@ -274,6 +293,10 @@ func (s *EmbeddedService) DiscoverOntology(
 	if err != nil {
 		return OntologyDiscoveryResult{}, err
 	}
+	promptIdentity := harness.ModelPromptExtendedTemplateHash() + "\n" + pack.Query() + "\n" + string(hostContext)
+	if protocolVersion == "v3" {
+		promptIdentity = "ontology-discovery-v3\n" + promptIdentity
+	}
 	audit := OntologyDiscoveryAudit{
 		Version: 1, UsageSnapshot: discoveryDigest(usageBytes),
 		SelectionPolicy: request.SelectionPolicy, SelectionReason: request.SelectionReason,
@@ -282,8 +305,7 @@ func (s *EmbeddedService) DiscoverOntology(
 		Authorization: encodeID(pack.Authorization().Fingerprint()),
 		BaseSchemaID:  encodeID(base.Schema().ID()), BaseVersionID: encodeID(base.ID()),
 		Provider: config.Model.Provider(), Model: config.Model.Model(), ModelVersion: config.Model.Version(),
-		PromptHash: discoveryDigest([]byte(harness.ModelPromptExtendedTemplateHash() + "\n" + pack.Query() +
-			"\n" + string(hostContext))),
+		PromptHash: discoveryDigest([]byte(promptIdentity)),
 		Evaluation: OntologyDiscoveryEvaluation{Status: "not_evaluated"},
 	}
 	for _, row := range usage {
@@ -307,9 +329,18 @@ func (s *EmbeddedService) DiscoverOntology(
 	if err := recorder.SetClock(s.now); err != nil {
 		return finish(ontology.GovernedProposal{}, "failed", "invalid interaction recorder clock", err)
 	}
-	runner, err := harness.NewModelRunner(config.Generator, harness.ModelRunnerConfig{
+	runnerConfig := harness.ModelRunnerConfig{
 		MaxOutputTokens: budgets.MaxOutputTokens, Now: s.now, HostContext: hostContext,
-	})
+	}
+	if protocolVersion == "v3" {
+		runnerConfig.BytesPerToken = 2.5
+		runnerConfig.UseActionSchema = true
+		runnerConfig.ActionSchemaBuilder = func(prompt string) (json.RawMessage, error) { return discoveryActionSchema(base, prompt) }
+		runnerConfig.ActionAdapter = func(text string, pack inference.ContextPack) (string, error) {
+			return discoveryAdaptAction(base, text, pack)
+		}
+	}
+	runner, err := harness.NewModelRunner(config.Generator, runnerConfig)
 	if err != nil {
 		return finish(ontology.GovernedProposal{}, "failed", "model runner configuration failed", err)
 	}
@@ -318,11 +349,15 @@ func (s *EmbeddedService) DiscoverOntology(
 		return finish(ontology.GovernedProposal{}, "failed", "graph tools unavailable", err)
 	}
 	host.RetrievalModes = []retrieval.Mode{retrieval.ModeLexical}
-	prompt, err := inference.NewPromptProvenance("shoal.ontology-discovery", "v2", audit.PromptHash)
+	prompt, err := inference.NewPromptProvenance("shoal.ontology-discovery", protocolVersion, audit.PromptHash)
 	if err != nil {
 		return finish(ontology.GovernedProposal{}, "failed", "invalid discovery prompt", err)
 	}
-	provenance, err := harness.NewProvenance("shoal-ontology-discovery-v1", config.Model, prompt, request.SelectionPolicy)
+	harnessVersion := "shoal-ontology-discovery-v1"
+	if protocolVersion == "v3" {
+		harnessVersion = "shoal-ontology-discovery-v3"
+	}
+	provenance, err := harness.NewProvenance(harnessVersion, config.Model, prompt, request.SelectionPolicy)
 	if err != nil {
 		return finish(ontology.GovernedProposal{}, "failed", "invalid discovery provenance", err)
 	}
