@@ -544,6 +544,7 @@ async function loadIdentity() {
     if (!response.ok) throw apiError(value, response);
     state.identity = value;
     renderIdentity(value);
+    maybeOpenInbox();
   } catch (error) {
     state.identity = null;
     renderIdentityError(error);
@@ -1927,10 +1928,8 @@ function applyCapabilities() {
   applyInboxCapability();
 }
 
-// The inbox is the front door when the host mounts it: the first time the
-// capability is seen, and only then, the workspace opens on it unless the
-// URL asked for another view. A host without it leaves the tab marked
-// unavailable and the workspace on Evidence as before.
+// The inbox opens first for an operator who can act on approvals or use the
+// learning service. A graph-only viewer keeps Evidence as the first screen.
 let inboxOpened = false;
 function applyInboxCapability() {
   const tab = $("tab-inbox");
@@ -1943,11 +1942,18 @@ function applyInboxCapability() {
   tab.title = available
     ? "What is awaiting you on this host"
     : "No approval or learning service is mounted by this host";
-  if (available && !inboxOpened) {
+  maybeOpenInbox();
+}
+
+function maybeOpenInbox() {
+  if (inboxOpened || !capability("inbox") || !state.identity || !state.identity.authenticated) return;
+  const requested = typeof URLSearchParams !== "undefined" && typeof window !== "undefined" && window.location
+    ? new URLSearchParams(window.location.search).get("view") : null;
+  if (requested && requested !== "inbox") return;
+  const canAct = (state.identity.operations || []).includes("action_approve") || capability("decision_learning");
+  if (requested === "inbox" || canAct) {
     inboxOpened = true;
-    const requested = typeof URLSearchParams !== "undefined" && typeof window !== "undefined" && window.location
-      ? new URLSearchParams(window.location.search).get("view") : null;
-    if (!requested) activate("inbox");
+    activate("inbox");
   }
 }
 

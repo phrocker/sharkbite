@@ -63,7 +63,9 @@ func (s *inboxApprovalStub) Pending(_ context.Context, r fleet.PendingApprovalsR
 	return page, nil
 }
 
-var inboxNow = time.Date(2026, 10, 31, 12, 0, 0, 0, time.UTC)
+// The authenticated transport validates expiry against the real clock, while
+// InboxSurface.Now uses this fixture clock. Keep them in the same live window.
+var inboxNow = time.Now().UTC().Truncate(time.Second)
 
 func inboxApproval(id, capability, action string, requested time.Time) fleet.ApprovalRecord {
 	return fleet.ApprovalRecord{ID: []byte(id), Version: 1, State: fleet.ApprovalPending, RequestDigest: []byte("digest-" + id), PolicyGeneration: 3, RequestedAt: requested, ExpiresAt: requested.Add(time.Hour), Request: fleet.ActionRecord{ID: []byte(id), AgentID: "gateway", AgentGeneration: 1, Capability: capability, Action: action, ObjectID: "release-7", Subject: "alice", Actor: "alice-agent", Deadline: requested.Add(3 * time.Hour), Input: json.RawMessage(`{"secret":"input"}`)}}

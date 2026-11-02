@@ -29,11 +29,13 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/phrocker/shoal-oss/pkg/document"
 	"github.com/phrocker/shoal-oss/pkg/graph"
@@ -44,6 +46,19 @@ import (
 )
 
 const ModelPromptMarker = "shoal-harness-action-json/v1"
+
+// MaxHostContextBytes bounds ModelRunnerConfig.HostContext. Callers that put
+// host reference material in front of a model should apply their own,
+// tighter bound derived from their input-token budget.
+const MaxHostContextBytes = 1 << 20
+
+// maxRepairOutputBytes bounds the prefix of a malformed output shown back to
+// the model in a repair turn.
+const maxRepairOutputBytes = 1024
+
+const modelPromptRepairInstruction = "Your previous output was rejected; the error is in repair.error and its start in " +
+	"repair.previous_output_prefix. Do not repeat this prompt, its envelope, or its field names. Reply with exactly one " +
+	"JSON object whose action is retrieve, open_section, neighbors, or stop, with the fields its schema requires."
 
 const modelPromptInstruction = "Return only one JSON object. Use action retrieve, open_section, neighbors, or stop. " +
 	"All JSON ID fields are base64-encoded opaque ID bytes. Final stop claims must cite evidence_ids from this context; " +
@@ -94,6 +109,30 @@ func modelPromptSchemas() []promptSchema {
 				"Every claim evidence_ids entry must be copied from evidence[].id.",
 		},
 	}
+}
+
+// ModelPromptExtendedTemplateHash returns the canonical SHA-256 digest for the
+// prompt template ModelRunner uses when a host_context section or a repair
+// turn extends the base envelope. Prompts without either are byte-identical
+// to the base template, whose ModelPromptTemplateHash is unchanged.
+func ModelPromptExtendedTemplateHash() string {
+	payload := struct {
+		Base              string   `json:"base"`
+		WireSchema        []string `json:"wire_schema"`
+		RepairInstruction string   `json:"repair_instruction"`
+		RepairOutputBytes int      `json:"repair_output_bytes"`
+	}{
+		Base:              ModelPromptTemplateHash(),
+		WireSchema:        wireSchemaDescriptors(reflect.TypeOf(extendedPromptEnvelope{})),
+		RepairInstruction: modelPromptRepairInstruction,
+		RepairOutputBytes: maxRepairOutputBytes,
+	}
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		panic(err)
+	}
+	sum := sha256.Sum256(encoded)
+	return "sha256:" + hex.EncodeToString(sum[:])
 }
 
 // ModelPromptTemplateHash returns the canonical SHA-256 digest for the
@@ -249,6 +288,9 @@ func typeDescriptor(t reflect.Type) string {
 	builder.WriteByte('{')
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
+		if field.Tag.Get("json") == "-" {
+			continue
+		}
 		builder.WriteString(field.Name)
 		builder.WriteByte(':')
 		builder.WriteString(field.Type.String())
@@ -261,10 +303,22 @@ func typeDescriptor(t reflect.Type) string {
 }
 
 type ModelRunnerConfig struct {
-	MaxOutputTokens int
-	TokenEstimator  TextTokenEstimator
-	Now             func() time.Time
-	ClockIdentity   string
+	MaxOutputTokens     int
+	TokenEstimator      TextTokenEstimator
+	BytesPerToken       float64
+	UseActionSchema     bool
+	ActionSchemaBuilder func(string) (json.RawMessage, error)
+	ActionAdapter       func(string, inference.ContextPack) (string, error)
+	Now                 func() time.Time
+	ClockIdentity       string
+	// HostContext is optional trusted, host-authored reference material (a
+	// JSON object, at most MaxHostContextBytes) rendered in every prompt's
+	// host_context section, separate from the bounded context query. It is
+	// for material the host owns, such as the base ontology a discovery run
+	// proposes against, never for untrusted source text: evidence stays in
+	// evidence. Its bytes count against the input-token budget like the rest
+	// of the prompt.
+	HostContext json.RawMessage
 }
 
 type TextTokenEstimator interface {
@@ -283,8 +337,22 @@ func NewModelRunner(generator lowmodel.TextGenerator, cfg ModelRunnerConfig) (*M
 	if cfg.MaxOutputTokens < 0 {
 		return nil, invalid("model max output tokens cannot be negative")
 	}
+	if math.IsNaN(cfg.BytesPerToken) || math.IsInf(cfg.BytesPerToken, 0) || cfg.BytesPerToken < 0 || cfg.BytesPerToken > 32 {
+		return nil, invalid("bytes per token is outside the supported range")
+	}
 	if cfg.Now == nil {
 		cfg.Now = time.Now
+	}
+	if len(cfg.HostContext) != 0 {
+		if len(cfg.HostContext) > MaxHostContextBytes {
+			return nil, invalid("model host context exceeds its byte bound")
+		}
+		var compact bytes.Buffer
+		if err := json.Compact(&compact, cfg.HostContext); err != nil ||
+			!bytes.HasPrefix(compact.Bytes(), []byte("{")) {
+			return nil, invalid("model host context must be one JSON object")
+		}
+		cfg.HostContext = append(json.RawMessage(nil), compact.Bytes()...)
 	}
 	return &ModelRunner{generator: generator, cfg: cfg}, nil
 }
@@ -306,6 +374,9 @@ func (r *ModelRunner) CacheIdentity() (string, error) {
 	if r == nil || r.generator == nil {
 		return "", ErrCacheIdentityUnsafe
 	}
+	if r.cfg.ActionSchemaBuilder != nil || r.cfg.ActionAdapter != nil {
+		return "", ErrCacheIdentityUnsafe
+	}
 	generatorIdentity, err := dependencyCacheIdentity(r.generator, "model generator")
 	if err != nil {
 		return "", err
@@ -321,13 +392,23 @@ func (r *ModelRunner) CacheIdentity() (string, error) {
 	if clockIdentity == "" || unsafeCacheText(clockIdentity) {
 		return "", ErrCacheIdentityUnsafe
 	}
-	identity := framed(
+	parts := []string{
 		"model-runner-v1",
 		generatorIdentity,
 		strconv.Itoa(r.cfg.MaxOutputTokens),
 		estimatorIdentity,
 		clockIdentity,
-	)
+	}
+	if len(r.cfg.HostContext) != 0 {
+		parts = append(parts, "host-context:"+digestString(string(r.cfg.HostContext)))
+	}
+	if r.cfg.BytesPerToken != 0 {
+		parts = append(parts, "bytes-per-token:"+strconv.FormatFloat(r.cfg.BytesPerToken, 'g', -1, 64))
+	}
+	if r.cfg.UseActionSchema {
+		parts = append(parts, "action-schema-v1")
+	}
+	identity := framed(parts...)
 	if unsafeCacheText(identity) {
 		return "", ErrCacheIdentityUnsafe
 	}
@@ -343,7 +424,7 @@ func (s *modelSession) Next(ctx context.Context, transcript Transcript) (Action,
 	if err := ctx.Err(); err != nil {
 		return Action{}, err
 	}
-	prompt, err := modelPrompt(s.request, transcript)
+	prompt, err := modelPrompt(s.request, transcript, s.runner.cfg.HostContext)
 	if err != nil {
 		return Action{}, err
 	}
@@ -369,9 +450,31 @@ func (s *modelSession) Next(ctx context.Context, transcript Transcript) (Action,
 	if s.runner.cfg.MaxOutputTokens > 0 && s.runner.cfg.MaxOutputTokens < maxOutput {
 		maxOutput = s.runner.cfg.MaxOutputTokens
 	}
+	perTurn := s.request.budgets.MaxOutputTokensPerTurn
+	if perTurn > 0 {
+		maxOutput = min(maxOutput, perTurn)
+	}
+	if reserve := s.request.budgets.RepairOutputTokens; reserve > 0 && transcript.RepairAttempts() == 0 {
+		if remainingOutput <= reserve {
+			return Action{}, budget("repair output token reserve")
+		}
+		maxOutput = min(maxOutput, remainingOutput-reserve)
+	}
+	var schema json.RawMessage
+	if capable, ok := s.runner.generator.(lowmodel.FormatSchemaGenerator); s.runner.cfg.UseActionSchema && ok && capable.SupportsFormatSchema() {
+		if s.runner.cfg.ActionSchemaBuilder != nil {
+			schema, err = s.runner.cfg.ActionSchemaBuilder(prompt)
+		} else {
+			schema, err = ActionSchemaForPrompt(prompt)
+		}
+		if err != nil {
+			return Action{}, invalid("action schema: " + err.Error())
+		}
+	}
 	generated, err := s.runner.generator.Generate(ctx, lowmodel.GenerateRequest{
 		Prompt:          prompt,
 		MaxOutputTokens: maxOutput,
+		FormatSchema:    schema,
 	})
 	if err != nil {
 		if errors.Is(err, lowmodel.ErrOversizedResponse) {
@@ -383,14 +486,27 @@ func (s *modelSession) Next(ctx context.Context, transcript Transcript) (Action,
 		InputTokens:  generated.Usage.InputTokens,
 		OutputTokens: generated.Usage.OutputTokens,
 	}
-	if usage.InputTokens < 0 || usage.OutputTokens < 0 {
+	if usage.InputTokens < 0 || usage.OutputTokens < 0 || usage.OutputTokens > maxOutput {
 		return Action{}, newActionError(invalid("model token usage cannot be negative"), Usage{})
 	}
 	if err := validateGeneratedProvenance(generated.Provenance, s.request.provenance.model); err != nil {
 		return Action{}, newActionError(err, usage)
 	}
-	action, err := parseModelAction(generated.Text, transcript.context, s.request.provenance, usage, s.runner.cfg.Now())
+	responseText := generated.Text
+	if s.runner.cfg.ActionAdapter != nil {
+		responseText, err = s.runner.cfg.ActionAdapter(responseText, transcript.context)
+		if err != nil {
+			return Action{}, actionError{err: malformed("model action: " + err.Error()), usage: usage, output: generated.Text}
+		}
+	}
+	if perTurn > 0 && usage.OutputTokens >= maxOutput {
+		return Action{}, actionError{err: malformed("model output reached its per-turn cap"), usage: usage, output: generated.Text}
+	}
+	action, err := parseModelAction(responseText, transcript.context, s.request.provenance, usage, s.runner.cfg.Now())
 	if err != nil {
+		if errors.Is(err, ErrMalformedModelOutput) {
+			return Action{}, actionError{err: err, usage: usage, output: generated.Text}
+		}
 		return Action{}, newActionError(err, usage)
 	}
 	return action, nil
@@ -400,13 +516,20 @@ func (r *ModelRunner) estimateInputTokens(ctx context.Context, prompt string) (i
 	if r.cfg.TokenEstimator != nil {
 		return r.cfg.TokenEstimator.EstimateTextTokens(ctx, prompt)
 	}
-	return len([]byte(prompt)), nil
+	bytesPerToken := r.cfg.BytesPerToken
+	if bytesPerToken == 0 {
+		bytesPerToken = 1
+	}
+	return int(math.Ceil(float64(len([]byte(prompt))) / bytesPerToken)), nil
 }
 
 func transcriptInputTokens(transcript Transcript) int {
 	total := 0
 	for _, exchange := range transcript.exchanges {
 		total += exchange.action.usage.InputTokens
+	}
+	for _, repair := range transcript.repairs {
+		total += repair.usage.InputTokens
 	}
 	if transcript.final != nil {
 		total += transcript.final.usage.InputTokens
@@ -425,8 +548,9 @@ func validateGeneratedProvenance(generated lowmodel.Provenance, expected inferen
 }
 
 type actionError struct {
-	err   error
-	usage Usage
+	err    error
+	usage  Usage
+	output string
 }
 
 func newActionError(err error, usage Usage) error {
@@ -435,6 +559,27 @@ func newActionError(err error, usage Usage) error {
 
 func (e actionError) Error() string { return e.err.Error() }
 func (e actionError) Unwrap() error { return e.err }
+
+// actionErrorOutput is a bounded, valid UTF-8 prefix of the rejected model
+// text, shown back to the model in a repair turn.
+func actionErrorOutput(err error) string {
+	var actionErr actionError
+	if !errors.As(err, &actionErr) {
+		return ""
+	}
+	return utf8Prefix(actionErr.output, maxRepairOutputBytes)
+}
+
+func utf8Prefix(value string, limit int) string {
+	if len(value) <= limit {
+		return strings.ToValidUTF8(value, "")
+	}
+	value = value[:limit]
+	for len(value) > 0 && !utf8.ValidString(value) {
+		value = value[:len(value)-1]
+	}
+	return value
+}
 
 func actionErrorUsage(err error) (Usage, bool) {
 	var actionErr actionError
@@ -448,6 +593,9 @@ func transcriptOutputTokens(transcript Transcript) int {
 	total := 0
 	for _, exchange := range transcript.exchanges {
 		total += exchange.action.usage.OutputTokens
+	}
+	for _, repair := range transcript.repairs {
+		total += repair.usage.OutputTokens
 	}
 	if transcript.final != nil {
 		total += transcript.final.usage.OutputTokens
@@ -469,6 +617,22 @@ type promptEnvelope struct {
 	Transcript  []promptExchange `json:"transcript"`
 	Schemas     []promptSchema   `json:"schemas"`
 	Instruction string           `json:"instruction"`
+}
+
+// extendedPromptEnvelope adds the optional host_context and repair sections.
+// It is used only when one of them is present, so prompts without them are
+// byte-identical to promptEnvelope.
+type extendedPromptEnvelope struct {
+	promptEnvelope
+	HostContext json.RawMessage `json:"host_context,omitempty"`
+	Repair      *promptRepair   `json:"repair,omitempty"`
+}
+
+type promptRepair struct {
+	Attempt        int    `json:"attempt"`
+	Error          string `json:"error"`
+	PreviousOutput string `json:"previous_output_prefix"`
+	Instruction    string `json:"instruction"`
 }
 
 type promptSnapshot struct {
@@ -663,7 +827,7 @@ func promptMetadataFrom(metadata shoal.Metadata) []promptMetadataEntry {
 	return entries
 }
 
-func modelPrompt(request SessionRequest, transcript Transcript) (string, error) {
+func modelPrompt(request SessionRequest, transcript Transcript, hostContext json.RawMessage) (string, error) {
 	contextEvidence := transcript.context.Evidence()
 	evidence := make([]promptEvidence, 0, len(contextEvidence))
 	for _, anchor := range contextEvidence {
@@ -716,7 +880,21 @@ func modelPrompt(request SessionRequest, transcript Transcript) (string, error) 
 		Schemas:     modelPromptSchemas(),
 		Instruction: modelPromptInstruction,
 	}
-	payload, err := json.Marshal(envelope)
+	var value any = envelope
+	if len(hostContext) != 0 || len(transcript.repairs) != 0 {
+		extended := extendedPromptEnvelope{promptEnvelope: envelope, HostContext: hostContext}
+		// Only a malformed turn immediately before this one is shown: a
+		// repair turn that itself acted successfully clears it.
+		if n := len(transcript.repairs); n != 0 && transcript.repairs[n-1].step == consumed.ModelCalls-1 {
+			last := transcript.repairs[n-1]
+			extended.Repair = &promptRepair{
+				Attempt: n, Error: last.failure, PreviousOutput: last.output,
+				Instruction: modelPromptRepairInstruction,
+			}
+		}
+		value = extended
+	}
+	payload, err := json.Marshal(value)
 	if err != nil {
 		return "", err
 	}
@@ -725,9 +903,13 @@ func modelPrompt(request SessionRequest, transcript Transcript) (string, error) 
 
 func promptConsumed(initial inference.ContextPack, transcript Transcript) BudgetUsage {
 	usage := BudgetUsage{
-		ModelCalls: len(transcript.exchanges),
+		ModelCalls: len(transcript.exchanges) + len(transcript.repairs),
 		Evidence:   len(initial.Evidence()),
 		GraphNodes: len(graphNodeSet(transcript.context.Evidence())),
+	}
+	for _, repair := range transcript.repairs {
+		usage.InputTokens += repair.usage.InputTokens
+		usage.OutputTokens += repair.usage.OutputTokens
 	}
 	for _, exchange := range transcript.exchanges {
 		usage.InputTokens += exchange.action.usage.InputTokens
@@ -799,10 +981,10 @@ func parseModelAction(
 	decoder := json.NewDecoder(bytes.NewReader([]byte(strings.TrimSpace(text))))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&payload); err != nil {
-		return Action{}, invalid("model output is not a valid action JSON object")
+		return Action{}, malformed(err.Error())
 	}
 	if err := decoder.Decode(&struct{}{}); err != io.EOF {
-		return Action{}, invalid("model output contains multiple JSON values")
+		return Action{}, malformed("output contains more than one JSON value")
 	}
 	switch payload.Action {
 	case ActionRetrieve:
@@ -830,9 +1012,18 @@ func parseModelAction(
 			return Action{}, fmt.Errorf("%w: model stop result: %v", ErrInvalid, err)
 		}
 		return NewStopAction(payload.CorrelationID.shoalID(), result, usage)
+	case "":
+		return Action{}, malformed("the object has no action field")
 	default:
 		return Action{}, invalid("model selected an unknown or forbidden action")
 	}
+}
+
+// malformed reports model text that is not one valid action JSON object. The
+// detail names the decoding problem (for example an unknown field), never the
+// model text itself.
+func malformed(detail string) error {
+	return fmt.Errorf("%w: %w: %s", ErrInvalid, ErrMalformedModelOutput, detail)
 }
 
 func resultFromPayload(

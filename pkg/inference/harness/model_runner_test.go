@@ -323,7 +323,7 @@ func TestModelRunnerProtocolIDsAreLosslessBase64(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	prompt, err := modelPrompt(request, newTranscript(request))
+	prompt, err := modelPrompt(request, newTranscript(request), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -364,7 +364,7 @@ func TestModelPromptIncludesRequiredActionSchemas(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	prompt, err := modelPrompt(request, newTranscript(request))
+	prompt, err := modelPrompt(request, newTranscript(request), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -407,7 +407,7 @@ func TestModelPromptIncludesPriorEmptyToolDetailsAndBudgets(t *testing.T) {
 	}
 	transcript := newTranscript(request)
 	transcript.exchanges = []Exchange{{action: action, result: result}}
-	prompt, err := modelPrompt(request, transcript)
+	prompt, err := modelPrompt(request, transcript, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -431,7 +431,7 @@ func TestModelPromptIncludesPriorEmptyToolDetailsAndBudgets(t *testing.T) {
 		t.Fatal(err)
 	}
 	transcript.exchanges = []Exchange{{action: action, result: result}}
-	prompt, err = modelPrompt(request, transcript)
+	prompt, err = modelPrompt(request, transcript, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
