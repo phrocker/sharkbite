@@ -134,7 +134,7 @@
   // The chain behind a held request: its current status (which carries the
   // input and the effective state beside the stored one) and the declared
   // effects of the action from the agent's current descriptor.
-  async function expandApproval(item, body, controls) {
+  async function expandApproval(item, body, controls, isCurrent) {
     body.textContent = "";
     body.appendChild(el("p", "muted", "Reading the request's status and the agent's descriptor…"));
     const row = item.approval;
@@ -142,10 +142,12 @@
     try {
       status = await post(`/api/v1/fleet/approvals/${encodeURIComponent(item.id)}/status`, context("inbox-inspect"));
     } catch (error) {
+      if (!isCurrent()) return;
       body.textContent = "";
       body.appendChild(el("p", "error", `Status unavailable: ${error.message || error}`));
       return;
     }
+    if (!isCurrent()) return;
     let effects = "(descriptor unavailable)";
     let requiresApproval = "";
     try {
@@ -164,6 +166,7 @@
     } catch (_) {
       // The chain still shows without the descriptor; the row says so.
     }
+    if (!isCurrent()) return;
     body.textContent = "";
     const stale = status.state !== "pending" || status.policy_generation !== row.policy_generation || status.request_digest !== row.request_digest;
     body.appendChild(kv([
@@ -188,11 +191,14 @@
       controls.appendChild(el("p", "error", "This request no longer matches the listing; reload the inbox before deciding."));
       return;
     }
+    let deciding = false;
     for (const verdict of ["approve", "refuse"]) {
       const button = el("button", "", verdict === "approve" ? "Approve" : "Refuse");
       button.type = "button";
       button.onclick = async () => {
-        button.disabled = true;
+        if (deciding || !isCurrent()) return;
+        deciding = true;
+        controls.querySelectorAll("button").forEach((control) => { control.disabled = true; });
         setStatus(`${verdict === "approve" ? "Approving" : "Refusing"} ${item.id}…`);
         try {
           const record = await post(`/api/v1/fleet/approvals/${encodeURIComponent(item.id)}/decide`, {
@@ -202,8 +208,16 @@
           setStatus(`Request ${item.id} is now ${record.state}.`);
           await load();
         } catch (error) {
+          // A conflict can mean the policy or approval moved. A transport
+          // failure can mean the transition committed before the response
+          // failed. In both cases a fresh list is required before another
+          // human decision; never re-enable the old controls.
+          if (isCurrent()) {
+            controls.textContent = "";
+            controls.appendChild(el("p", "error", "Decision result needs a fresh inbox read before another action."));
+          }
+          await load();
           failed("Decision", error);
-          button.disabled = false;
         }
       };
       controls.appendChild(button);
@@ -264,8 +278,10 @@
         setStatus(`Candidate ${item.id} promoted.`);
         await load();
       } catch (error) {
+        // A failed response does not prove promotion was not committed.
+        // Reload before offering another action on this candidate.
+        await load();
         failed("Promotion", error);
-        promote.disabled = false;
       }
     };
     controls.appendChild(promote);
@@ -284,10 +300,12 @@
     const controls = el("div", "button-row inbox-controls");
     details.appendChild(body);
     details.appendChild(controls);
+    let inspection = 0;
     details.addEventListener("toggle", () => {
+      const current = ++inspection;
       if (!details.open) return;
       select(item.kind, item.id, item.approval ? item.approval.object_id : "");
-      expand(item, body, controls);
+      expand(item, body, controls, () => details.open && inspection === current);
     });
     return details;
   }

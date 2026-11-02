@@ -419,6 +419,11 @@ func unsafeContextForCache(pack inference.ContextPack) bool {
 }
 
 func unsafeRecordForCache(record Record) bool {
+	// A repaired run's transcript holds malformed model text; it is never
+	// served from the cache.
+	if len(record.Transcript.repairs) > 0 {
+		return true
+	}
 	if unsafeCacheText(string(record.Request.id)) ||
 		unsafeContextForCache(record.Request.context) ||
 		unsafeProvenanceForCache(record.Request.provenance) ||
