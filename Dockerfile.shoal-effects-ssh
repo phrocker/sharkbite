@@ -8,7 +8,7 @@
 # Dockerfile.shoal-gateway builds from, so a CI job that builds both pulls each
 # once. See docs/effects-ssh.md.
 
-ARG GO_IMAGE=golang@sha256:ebd54034f076819b3054f155db53660ded951612bb4dfd277f933e62059e5d5a
+ARG GO_IMAGE=golang@sha256:2a0ba12e116687098780d3ce700f9ce3cb340783779646aafbabed748fa6677c
 
 FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS build
 WORKDIR /src

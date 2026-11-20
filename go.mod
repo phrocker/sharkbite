@@ -1,6 +1,6 @@
 module github.com/phrocker/shoal-oss
 
-go 1.25.0
+go 1.26.0
 
 require github.com/apache/thrift v0.24.0
 
@@ -35,6 +35,8 @@ require (
 	filippo.io/edwards25519 v1.2.0
 	github.com/accumulo/wal-quorum-sidecar v0.0.0-00010101000000-000000000000
 )
+
+require go.opentelemetry.io/otel/log v1.47.0 // indirect
 
 require (
 	cel.dev/expr v0.25.2 // indirect
@@ -93,11 +95,11 @@ require (
 	go.opentelemetry.io/contrib/detectors/gcp v1.44.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.67.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.67.0 // indirect
-	go.opentelemetry.io/otel v1.46.0 // indirect
-	go.opentelemetry.io/otel/metric v1.46.0 // indirect
+	go.opentelemetry.io/otel v1.47.0 // indirect
+	go.opentelemetry.io/otel/metric v1.47.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.46.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.46.0 // indirect
-	go.opentelemetry.io/otel/trace v1.46.0 // indirect
+	go.opentelemetry.io/otel/trace v1.47.0 // indirect
 	golang.org/x/crypto v0.55.0 // indirect
 	golang.org/x/net v0.58.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
