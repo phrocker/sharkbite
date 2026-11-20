@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM --platform=$BUILDPLATFORM golang:1.25-bookworm AS build
+FROM --platform=$BUILDPLATFORM golang:1.26-bookworm AS build
 WORKDIR /src
 
 COPY go.mod go.sum ./
@@ -13,8 +13,8 @@ COPY . .
 
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
-# go.work pins a newer toolchain than this base image; both modules
-# themselves build on 1.25, so the image builds outside the workspace.
+# Build the root module with the copied sidecar replacement, not the workspace's
+# independent extension modules.
 ENV GOWORK=off \
     CGO_ENABLED=0 \
     GOOS=${TARGETOS} \

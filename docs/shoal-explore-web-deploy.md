@@ -32,9 +32,9 @@ digest and the endpoint must be loopback unless explicitly acknowledged.
 
 `Dockerfile.shoal-explore-web` is a multi-stage build:
 
-- **build stage** `golang:1.25-bookworm`, `CGO_ENABLED=0`, `GOWORK=off` (the
-  repo's `go.work` pins a newer toolchain than the base image; the command
-  itself builds on 1.25).
+- **build stage** `golang:1.26-bookworm`, `CGO_ENABLED=0`, `GOWORK=off` (the
+  build uses the root module and its local sidecar replacement outside the
+  developer workspace).
 - **runtime stage** `gcr.io/distroless/static-debian12:nonroot` — runs as uid/gid
   `65532`, contains only the stripped binary and an empty, `65532`-owned state
   root. `/var/lib/shoal` (the whole state root) is a declared `VOLUME`.
