@@ -7,7 +7,7 @@
 # deployments differ only in the flags/environment passed at run time, never in
 # code or image. See docs/shoal-explore-web-deploy.md.
 
-ARG GO_IMAGE=golang:1.25-bookworm
+ARG GO_IMAGE=golang:1.26-bookworm
 
 FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS build
 WORKDIR /src
@@ -24,8 +24,8 @@ ARG TARGETOS=linux
 ARG TARGETARCH=amd64
 ARG VERSION=dev
 ARG REVISION=unknown
-# go.work pins a newer toolchain than this base image; the command itself
-# builds on 1.25, so the image builds outside the workspace.
+# Build the root module with the copied sidecar replacement, not the workspace's
+# independent extension modules.
 ENV GOWORK=off \
     CGO_ENABLED=0 \
     GOOS=${TARGETOS} \

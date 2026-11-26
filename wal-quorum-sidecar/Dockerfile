@@ -18,7 +18,7 @@
 #
 
 # Stage 1: Generate protobuf Go code.
-FROM golang:1.24-alpine AS protogen
+FROM golang:1.26-alpine AS protogen
 
 RUN apk add --no-cache protobuf git
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.34.2 && \
@@ -35,7 +35,7 @@ RUN mkdir -p /out && \
            wal_quorum_service.proto
 
 # Stage 2: Build the Go binary.
-FROM golang:1.24-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 RUN apk add --no-cache git ca-certificates
 

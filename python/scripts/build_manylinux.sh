@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly GO_VERSION="1.25.0"
+readonly GO_VERSION="1.26.0"
 readonly GO_ARCHIVE="go${GO_VERSION}.linux-amd64.tar.gz"
-readonly GO_SHA256="2852af0cb20a13139b3448992e69b868e50ed0f8a1e5940ee1de9e19a123b613"
+readonly GO_SHA256="aac1b08a0fb0c4e0a7c1555beb7b59180b05dfc5a3d62e40e9de90cd42f88235"
 readonly PYTHON_BIN="/opt/python/cp311-cp311/bin/python"
 readonly TOOLCHAIN_ROOT="/opt/shoal-release-toolchain"
 

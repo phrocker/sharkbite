@@ -140,7 +140,7 @@ def validate(root: Path = ROOT) -> list[str]:
             f"FROM zookeeper@{ZOOKEEPER_IMAGE_DIGEST} AS zookeeper",
         ),
         "Java smoke mount": (compose, "./smoke:/opt/shoal-smoke:ro"),
-        "Shoal Go toolchain": (shoal_dockerfile, "FROM golang:1.25-bookworm AS build"),
+        "Shoal Go toolchain": (shoal_dockerfile, "FROM golang:1.26-bookworm AS build"),
         "Shoal image build": (
             compose,
             "dockerfile: test/accumulo/shoal.Dockerfile",
