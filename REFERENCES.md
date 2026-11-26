@@ -416,6 +416,6 @@ pattern reference, not a code dependency.
 
 - `time.Timer.Stop` and `time.Timer.Reset` documentation for Go 1.23+
   - channel-based timers do not deliver stale values after Stop or Reset
-  - `go.mod` requires Go 1.25, so this guarantee is part of the supported
+  - `go.mod` requires Go 1.26, so this guarantee is part of the supported
     runtime baseline
   - shoal reuses one channel-based timer and joins its owning goroutine

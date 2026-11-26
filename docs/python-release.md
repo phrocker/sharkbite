@@ -89,7 +89,7 @@ place private keys or credentials in the repository or build environment.
 `.github/workflows/python-manylinux-release.yml` is the authoritative Linux
 x86-64 build and publication lane. It runs for relevant pull requests, version
 tags, published GitHub releases, and manual dispatches. The job uses an
-immutable `manylinux_2_28_x86_64` image digest, downloads the exact Go 1.25.0
+immutable `manylinux_2_28_x86_64` image digest, downloads the exact Go 1.26.0
 toolchain after verifying its published SHA-256 digest, installs a complete
 hash-locked Python build-tool set from `python/requirements-release.txt`, and
 builds the artifacts twice. Both `SHA256SUMS` and the complete release manifest

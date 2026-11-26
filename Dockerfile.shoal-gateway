@@ -5,7 +5,7 @@
 # digest-pinned references Dockerfile.shoal-embed builds from; where they come
 # from is #638's decision, not this file's. See docs/effects-gateway-deploy.md.
 
-ARG GO_IMAGE=golang@sha256:2a0ba12e116687098780d3ce700f9ce3cb340783779646aafbabed748fa6677c
+ARG GO_IMAGE=golang@sha256:dc40a13b61304647ed7e5d581d246b86413dfc29d63c6d018310feb93cd98fc0
 
 FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS build
 WORKDIR /src
@@ -25,8 +25,8 @@ COPY accumulo ./accumulo
 
 ARG TARGETOS=linux
 ARG TARGETARCH
-# Build outside the workspace so the command uses the module's Go 1.26
-# directive rather than go.work's toolchain pin.
+# Build the root module with the copied sidecar replacement, not the workspace's
+# independent extension modules.
 ENV CGO_ENABLED=0 \
     GOOS=${TARGETOS} \
     GOARCH=${TARGETARCH} \

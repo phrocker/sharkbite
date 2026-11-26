@@ -1,4 +1,4 @@
-FROM golang:1.26.0-bookworm AS build
+FROM golang:1.26-bookworm AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 COPY wal-quorum-sidecar/go.mod wal-quorum-sidecar/go.sum ./wal-quorum-sidecar/

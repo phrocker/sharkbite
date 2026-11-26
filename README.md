@@ -185,7 +185,7 @@ Those roles have separate validation gates; see
 
 ## Build and test
 
-Requirements for the normal Go workflow are Go 1.25+, Python 3.9+ for the
+Requirements for the normal Go workflow are Go 1.26+, Python 3.9+ for the
 compatibility package, `make`, and a native C toolchain.
 
 ```bash
